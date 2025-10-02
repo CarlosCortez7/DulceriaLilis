@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="container py-5">
+
+    <section class="card card-body">
+        <h1 class="text-center display-1">Agregar Producto</h1>
+    </section>
+
+    <section class="mt-5">
+        <h2 class="text-center mb-4">Formulario de Producto</h2>
+        <form method="post" class="card card-body">
+            {% csrf_token %}
+            <div class="row">
+                {% for field in form %}
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="text-center mt-3">
+                <button type="submit" class="btn btn-primary">Agregar Producto</button>
+            </div>
+        </form>
+    </section>
+
+</main>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="container py-5">
+    <section class="card card-body">
+        <h1 class="display-1 text-center">Home</h1>
+<<<<<<< HEAD
+        <p class="text-center">Esta pagina esta en construccion :)</p>
+        <p>by: Carlos</p>
+    </section>
+</main>
+{% endblock %}
+=======
+        <p class="text-center">Esta página está en construcción :)</p>
+        <p>by: Carlos</p>
+    </section>
+
+   <!-- Sección de productos activos -->
+<section class="mt-5">
+    <h2 class="text-center mb-4">Productos</h2>
+    {% if productos %}
+        <div class="row">
+            {% for producto in productos %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        {% if producto.imagen_url %}
+                            <img src="{{ producto.imagen_url }}" class="card-img-top" alt="{{ producto.nombre }}">
+                        {% else %}
+                            <img src="https://via.placeholder.com/150" class="card-img-top" alt="Imagen no disponible">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ producto.nombre }}</h5>
+                            <p class="card-text">{{ producto.descripcion }}</p>
+                            <p class="card-text"><strong>Cantidad disponible:</strong> {{ producto.stock_actual }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center">No hay productos activos disponibles.</p>
+    {% endif %}
+</section>
+</main>
+{% endblock %}
+>>>>>>> e8be2a1 (semillas y modulo categoria + formularios)
