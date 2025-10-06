@@ -1,0 +1,120 @@
+# =====================================
+# PYTHON / DJANGO PROJECT .gitignore
+# =====================================
+
+# --- Archivos de Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Entornos virtuales ---
+venv/
+env/
+ENV/
+.venv/
+.virtualenv/
+venv.bak/
+.env.bak/
+
+# --- Archivos de entorno / variables ---
+.env
+*.env
+.env.local
+.env.production
+.env.development
+
+# --- Archivos de configuración del sistema ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Configuración de VSCode / IDEs ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# --- Archivos de logs ---
+*.log
+*.log.*
+logs/
+log/
+*.out
+*.err
+
+# --- Archivos temporales ---
+*.tmp
+*.bak
+*.swp
+*.swo
+*.~*
+
+# --- Archivos de compilación ---
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# --- Migrations compiladas ---
+# (Opcional: puedes descomentarlas si prefieres no versionarlas)
+# */migrations/*
+# !*/migrations/__init__.py
+
+# --- Archivos de bases de datos locales ---
+# SQLite
+db.sqlite3
+db.sqlite3-journal
+
+# MySQL dumps o backups
+*.sql
+*.sql.gz
+*.dump
+
+# --- Archivos estáticos y multimedia ---
+staticfiles/
+static/
+media/
+uploads/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.webp
+
+# --- Django cache ---
+*.cache
+*.pyc
+__pycache__/
+django_cache/
+
+# --- Archivos generados por herramientas ---
+.coverage
+htmlcov/
+.tox/
+.nox/
+.cache/
+pytest_cache/
+*.pot
+*.mo
+*.py,cover
+
+# --- Archivos de Docker ---
+Dockerfile~
+docker-compose*.yml~
+.docker/
+*.pid
+
+# --- Archivos de seguridad ---
+*.pem
+*.key
+*.crt
+*.csr
+
+# --- Archivos temporales de Jupyter ---
+.ipynb_checkpoints
+
+# --- Archivos de pruebas ---
+test_*.py
+tests/

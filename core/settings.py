@@ -136,12 +136,6 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-<<<<<<< HEAD
-LOGIN_URL = '/iniciar_sesion/'
-=======
-LOGIN_URL = 'iniciar_sesion/'
->>>>>>> e8be2a1 (semillas y modulo categoria + formularios)
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

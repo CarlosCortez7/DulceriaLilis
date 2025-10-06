@@ -1,16 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-<<<<<<< HEAD
-from usuarios.models import Usuario
-=======
-from django.contrib.auth.models import User
->>>>>>> e8be2a1 (semillas y modulo categoria + formularios)
 from django.contrib.auth import login, logout, authenticate
 from django.db import IntegrityError
 from .form import FormularioTarea
 from .models import Tareas
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
+from .form import CustomLoginForm
+from .form import UsuarioCreationForm
 
 
 # Create your views here.
@@ -19,31 +17,16 @@ def home(request):
     return render(request, 'home.html')
 
 def registrarse(request):
-
     if request.method == 'GET':
-        return render(request, 'registrarse.html', {
-        'form': UserCreationForm
-    })
+        form = UsuarioCreationForm()
     else:
-        if request.POST['password1'] == request.POST['password2']:
-            try:
-<<<<<<< HEAD
-                user = Usuario.objects.create_user(username=request.POST['username'], password=request.POST['password1'])
-=======
-                user = User.objects.create_user(username=request.POST['username'], password=request.POST['password1'])
->>>>>>> e8be2a1 (semillas y modulo categoria + formularios)
-                user.save()
-                login(request, user)
-                return redirect('tareas')
-            except IntegrityError:
-                return render(request, 'registrarse.html', {
-                    'form': UserCreationForm,
-                    "error": 'usuario ya existe'
-                })
-        return render(request, 'registrarse.html', {
-                    'form': UserCreationForm,
-                    "error": 'contraseñas no coiciden'
-                })
+        form = UsuarioCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('tareas')
+    return render(request, 'registrarse.html', {'form': form})
+
 
 @login_required
 def tareas(request):
@@ -110,16 +93,21 @@ def cerrar_sesion(request):
 
 def iniciar_sesion(request):
     if request.method == 'GET':
-        return render(request, 'iniciar_sesion.html', {
-            'form': AuthenticationForm
-        })
+        form = CustomLoginForm()
+        return render(request, 'iniciar_sesion.html', {'form': form})
     else:
-        user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
-        if user is None:
-            return render(request, 'iniciar_sesion.html', {
-                'form': AuthenticationForm,
-                'error': 'usuario o contraseña es incorrecta'
-            })
-        else:
+        form = CustomLoginForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
             login(request, user)
             return redirect('tareas')
+        else:
+            # form.errors ya tiene los mensajes de validación
+            return render(request, 'iniciar_sesion.html', {
+                'form': form,
+                'error': 'Revisa los campos e intenta nuevamente'
+            })
+        
+class CustomLoginView(LoginView):
+    template_name = 'iniciar_sesion.html'
+    authentication_form = CustomLoginForm
