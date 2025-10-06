@@ -29,9 +29,4 @@ class Tareas(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
-<<<<<<< HEAD
         return self.titulo + ' - ' + self.user.username
-=======
-        return self.titulo + ' - ' + self.user.username
-    
->>>>>>> e8be2a1 (semillas y modulo categoria + formularios)

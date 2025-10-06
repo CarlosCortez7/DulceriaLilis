@@ -1,13 +1,3 @@
-<<<<<<< HEAD
-from django.shortcuts import render
-from .models import Producto
-
-# Create your views here.
-def productos(request):
-    productos = Producto.objects.filter(user=request.user, fecha_completado__isnull=True)
-    return render(request, 'productos.html', {'productos': productos})
-
-=======
 from django.shortcuts import render, redirect
 from productos.models import Producto
 from .forms import ProductoForm
@@ -38,4 +28,3 @@ def agregar_producto(request):
         form = ProductoForm()
     
     return render(request, 'agregar_producto.html', {'form': form})
->>>>>>> e8be2a1 (semillas y modulo categoria + formularios)
