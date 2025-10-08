@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import pymysql
+pymysql.install_as_MySQLdb()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")  # ← carga el .env
@@ -145,3 +147,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/compras/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+
+
+
+# ============================================================
+# CONFIGURACIÓN DE EMAIL PARA RECUPERAR CONTRASEÑA
+# ============================================================
+
+# En desarrollo, puedes usar este backend para ver los correos en la terminal:
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
