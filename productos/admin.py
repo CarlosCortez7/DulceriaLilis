@@ -8,6 +8,6 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ('id_interno', 'nombre', 'categoria', 'precio_venta', 'stock_actual', 'estado')
-    search_fields = ('id_interno', 'nombre')
-    list_filter = ('categoria', 'perecible', 'control_por_lote', 'estado')
+    list_display = ('nombre', 'categoria', 'estado', 'unidad_medida')
+    search_fields = ('nombre','estado', 'unidad_medida')
+    list_filter = ('categoria', 'estado')

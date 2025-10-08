@@ -6,7 +6,7 @@ from .forms import ProductoForm
 # Create your views here.
 
 def home(request):
-    productos = Producto.objects.filter(estado='activo', stock_actual__gt=0).order_by('nombre')
+    productos = Producto.objects.filter(estado='activo').order_by('nombre')
 
     if request.method == "POST":
         form = ProductoForm(request.POST)
