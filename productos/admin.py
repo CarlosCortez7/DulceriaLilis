@@ -5,7 +5,7 @@ from .models import Categoria, Producto
 class ProductoInline(admin.TabularInline):
     model = Producto
     extra = 1  
-    fields = ('id_interno', 'nombre', 'precio_venta', 'unidad_compra', 'unidad_venta')
+    fields = ('id_interno', 'nombre', 'estado', 'unidad_medida')
     show_change_link = True  # Para mostrar el enlace a los productos existentes
 
 @admin.register(Categoria)
