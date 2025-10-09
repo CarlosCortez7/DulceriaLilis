@@ -1,32 +1,53 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<main class="container py-5">
+<main class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <form method="POST" class="card card-body">
+                <h2 class="text-center mb-4">Agregar Producto</h2>
+                {% csrf_token %}
+                {{ form.as_p }}
 
-    <section class="card card-body">
-        <h1 class="text-center display-1">Agregar Producto</h1>
-    </section>
-
-    <section class="mt-5">
-        <h2 class="text-center mb-4">Formulario de Producto</h2>
-        <form method="post" class="card card-body">
-            {% csrf_token %}
-            <div class="row">
-                {% for field in form %}
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}
-                            <div class="text-danger">{{ field.errors }}</div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-            <div class="text-center mt-3">
-                <button type="submit" class="btn btn-primary">Agregar Producto</button>
-            </div>
-        </form>
-    </section>
-
+                <button type="submit" class="btn btn-success w-100 mt-3">Guardar Producto</button>
+            </form>
+        </div>
+    </div>
 </main>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+{% if form.errors %}
+<script>
+    Swal.fire({
+        title: "Error al registrar el producto",
+        html: `
+            {% for field, errors in form.errors.items %}
+                <b>{{ field|capfirst }}:</b> 
+                {% for error in errors %}
+                    {{ error }}<br>
+                {% endfor %}
+            {% endfor %}
+        `,
+        icon: "error",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#d33",
+    });
+</script>
+{% endif %}
+
+{% if messages %}
+    {% for message in messages %}
+        <script>
+            Swal.fire({
+                title: "{{ message.tags|capfirst }}",
+                text: "{{ message }}",
+                icon: "{{ message.tags }}",
+                confirmButtonText: "Aceptar",
+                confirmButtonColor: "#3085d6"
+            });
+        </script>
+    {% endfor %}
+{% endif %}
 {% endblock %}

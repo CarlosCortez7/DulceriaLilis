@@ -1,13 +1,23 @@
 from django.contrib import admin
 from .models import Categoria, Producto
 
+# Definir el modelo inline para Producto
+class ProductoInline(admin.TabularInline):
+    model = Producto
+    extra = 1  
+    fields = ('id_interno', 'nombre', 'estado', 'unidad_medida')
+    show_change_link = True  # Para mostrar el enlace a los productos existentes
+
 @admin.register(Categoria)
 class CategoriaAdmin(admin.ModelAdmin):
     list_display = ('id', 'nombre')
     search_fields = ('nombre',)
+    ordering = ['nombre']
+    inlines = [ProductoInline]  # Integrando el inline para mostrar productos relacionados
 
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ('id_interno', 'nombre', 'categoria', 'precio_venta', 'stock_actual', 'estado')
-    search_fields = ('id_interno', 'nombre')
-    list_filter = ('categoria', 'perecible', 'control_por_lote', 'estado')
+    list_display = ('nombre', 'categoria', 'estado', 'unidad_medida')
+    search_fields = ('nombre','estado', 'unidad_medida')
+    list_filter = ('categoria', 'estado')
+

@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import pymysql
+pymysql.install_as_MySQLdb()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")  # ← carga el .env
@@ -76,9 +78,9 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-ENGINE = os.getenv("DB_ENGINE", "sqlite")
+DB_MODE = os.getenv("DB_MODE", "sqlite")
 
-if ENGINE == "mysql":
+if DB_MODE == "mysql":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
@@ -90,13 +92,15 @@ if ENGINE == "mysql":
             "OPTIONS": {"charset": "utf8mb4"},
         }
     }
-else:  # SQLite por defecto
+else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / os.getenv("DB_NAME", "db.sqlite3"),
+            "NAME": BASE_DIR / os.getenv("SQLITE_NAME", "db.sqlite3"),
         }
     }
+
+print(f"\nBase de datos activa: {'MySQL (WampServer)' if DB_MODE == 'mysql' else 'SQLite local'}\n")
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
 
@@ -128,7 +132,7 @@ TIME_ZONE = 'America/Santiago'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -136,18 +140,23 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-<<<<<<< HEAD
-LOGIN_URL = '/iniciar_sesion/'
-=======
-LOGIN_URL = 'iniciar_sesion/'
->>>>>>> e8be2a1 (semillas y modulo categoria + formularios)
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración de login/logout
-LOGIN_URL = '/login/'
+LOGIN_URL = '/admin/login/'
 LOGIN_REDIRECT_URL = '/compras/'
-LOGOUT_REDIRECT_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/admin/login/'
+
+
+
+
+# ============================================================
+# CONFIGURACIÓN DE EMAIL PARA RECUPERAR CONTRASEÑA
+# ============================================================
+
+# En desarrollo, puedes usar este backend para ver los correos en la terminal:
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+

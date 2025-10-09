@@ -1,0 +1,6 @@
+Django>=5.2,<6.0
+cryptography
+PyMySQL
+python-dotenv
+
+# pip install -r requirements.txt

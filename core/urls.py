@@ -14,39 +14,27 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path
-from django.urls import include
-<<<<<<< HEAD
-from usuarios import views
 
-=======
+from django.contrib import admin
+from django.urls import path, include
+
+# Importar vistas
 from productos.views import home, agregar_producto  
-from usuarios.views import registrarse, iniciar_sesion, cerrar_sesion, tareas, tasks_completed, crear_tarea, tareas_detalles, tarea_completada, tarea_eliminada
->>>>>>> e8be2a1 (semillas y modulo categoria + formularios)
+from usuarios.views import (
+    registrarse, iniciar_sesion, cerrar_sesion,
+    tareas, tasks_completed, crear_tarea,
+    tareas_detalles, tarea_completada, tarea_eliminada
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('compras/', include('compras.urls')),  
 
-<<<<<<< HEAD
-    path("", views.home, name='home'),
-    path("registrarse/", views.registrarse, name='registrarse'),
-    path("tareas/", views.tareas, name='tareas'),
-    path("tasks_completed/", views.tasks_completed, name='tasks_completed'),
-    path("tareas/crear/", views.crear_tarea, name='crear_tarea'),
-    path("tareas/<int:tarea_id>/", views.tareas_detalles, name='tareas_detalles'),
-    path("tareas/<int:tarea_id>/completado", views.tarea_completada, name='tarea_completada'),
-    path("tareas/<int:tarea_id>/eliminar", views.tarea_eliminada, name='tarea_eliminada'),
-
-    path("iniciar_sesion/", views.iniciar_sesion, name='iniciar_sesion'),
-    path("logout/", views.cerrar_sesion, name='logout'),
-
-
-]
-=======
+    # Productos
     path("", home, name='home'),
     path("agregar_producto/", agregar_producto, name='agregar_producto'),
+
+    # Usuarios
     path("registrarse/", registrarse, name='registrarse'),
     path("tareas/", tareas, name='tareas'),
     path("tasks_completed/", tasks_completed, name='tasks_completed'),
@@ -58,4 +46,4 @@ urlpatterns = [
     path("iniciar_sesion/", iniciar_sesion, name='iniciar_sesion'),
     path("logout/", cerrar_sesion, name='logout'),
 ]
->>>>>>> e8be2a1 (semillas y modulo categoria + formularios)
+

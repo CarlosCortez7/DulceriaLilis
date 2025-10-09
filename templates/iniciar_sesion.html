@@ -1,21 +1,41 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
 <main class="container">
     <div class="row">
         <div class="col-md-4 offset-md-4 mt-4">
-            <form action="" method="post" class="card card-body text-center">
-                <h1>Iniciar sesion</h1>
-                {{error}}
+            <form id="loginForm" method="post" class="card card-body text-center">
+                <h1>Iniciar sesión</h1>
                 {% csrf_token %}
-                {{form.as_table}}
-                <button class="btn btn-danger">
-                    Iniciar sesion
-                </button>
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-danger mt-2">Iniciar sesión</button>
             </form>
         </div>
     </div>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% if form.errors %}
+<div id="errores-formulario" style="display:none;">
+    {% for error in form.non_field_errors %}
+        <p><strong>General:</strong> {{ error }}</p>
+    {% endfor %}
+    {% for field in form %}
+        {% for error in field.errors %}
+            <p><strong>{{ field.label }}:</strong> {{ error }}</p>
+        {% endfor %}
+    {% endfor %}
+</div>
+<script>
+    var errores = document.getElementById('errores-formulario').innerHTML;
+    if (errores.trim() !== "") {
+        Swal.fire({
+            icon: 'error',
+            title: 'Errores en el formulario',
+            html: errores,
+            confirmButtonColor: '#d33'
+        });
+    }
+</script>
+{% endif %}
 {% endblock %}
