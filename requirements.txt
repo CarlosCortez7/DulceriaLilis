@@ -1,6 +1,6 @@
-#carlos
-
-#felipe
-django
+Django>=5.2,<6.0
 cryptography
-pymysql
+PyMySQL
+python-dotenv
+
+# pip install -r requirements.txt

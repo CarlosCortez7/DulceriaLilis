@@ -78,9 +78,9 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-ENGINE = os.getenv("DB_ENGINE", "sqlite")
+DB_MODE = os.getenv("DB_MODE", "sqlite")
 
-if ENGINE == "mysql":
+if DB_MODE == "mysql":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
@@ -92,13 +92,15 @@ if ENGINE == "mysql":
             "OPTIONS": {"charset": "utf8mb4"},
         }
     }
-else:  # SQLite por defecto
+else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / os.getenv("DB_NAME", "db.sqlite3"),
+            "NAME": BASE_DIR / os.getenv("SQLITE_NAME", "db.sqlite3"),
         }
     }
+
+print(f"\nBase de datos activa: {'MySQL (WampServer)' if DB_MODE == 'mysql' else 'SQLite local'}\n")
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
 
