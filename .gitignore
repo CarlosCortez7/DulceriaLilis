@@ -58,8 +58,8 @@ dist/
 
 # --- Migrations compiladas ---
 # (Opcional: puedes descomentarlas si prefieres no versionarlas)
-# */migrations/*
-# !*/migrations/__init__.py
+ */migrations/*
+ !*/migrations/__init__.py
 
 # --- Archivos de bases de datos locales ---
 # SQLite

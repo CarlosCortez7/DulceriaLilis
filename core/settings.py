@@ -15,8 +15,8 @@ import os
 from dotenv import load_dotenv
 # Mapeo de tags de mensajes a clases de Bootstrap 5
 from django.contrib.messages import constants as msg
-# import pymysql
-# pymysql.install_as_MySQLdb()
+import pymysql
+pymysql.install_as_MySQLdb()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")  # ← carga el .env
@@ -84,16 +84,14 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DB_MODE = os.getenv("DB_MODE", "sqlite")
 
 DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE'),
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
-        },
+    "default": {
+        "ENGINE": "django.db.backends.mysql", # <-- ASEGÚRATE DE QUE SEA ESTE VALOR
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "3306"),
+        "OPTIONS": {"charset": "utf8mb4"},
     }
 }
 
