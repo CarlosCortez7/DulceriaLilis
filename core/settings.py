@@ -13,8 +13,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-import pymysql
-pymysql.install_as_MySQLdb()
+# Mapeo de tags de mensajes a clases de Bootstrap 5
+from django.contrib.messages import constants as msg
+# import pymysql
+# pymysql.install_as_MySQLdb()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")  # ← carga el .env
@@ -67,6 +69,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'productos.context_processors.cart_item_count',
             ],
         },
     },
@@ -80,27 +83,12 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DB_MODE = os.getenv("DB_MODE", "sqlite")
 
-if DB_MODE == "mysql":
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": os.getenv("DB_NAME"),
-            "USER": os.getenv("DB_USER"),
-            "PASSWORD": os.getenv("DB_PASSWORD"),
-            "HOST": os.getenv("DB_HOST", "localhost"),
-            "PORT": os.getenv("DB_PORT", "3306"),
-            "OPTIONS": {"charset": "utf8mb4"},
-        }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / os.getenv("SQLITE_NAME", "db.sqlite3"),
-        }
-    }
-
-print(f"\nBase de datos activa: {'MySQL (WampServer)' if DB_MODE == 'mysql' else 'SQLite local'}\n")
+}
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
 
@@ -140,13 +128,19 @@ USE_TZ = False
 
 STATIC_URL = 'static/'
 
+# URL para acceder a los archivos multimedia desde el navegador
+MEDIA_URL = '/media/'
+
+# Ruta en el disco duro donde se guardarán los archivos subidos
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración de login/logout
-LOGIN_URL = '/admin/login/'
+LOGIN_URL = '/iniciar_sesion/'
 LOGIN_REDIRECT_URL = '/compras/'
 LOGOUT_REDIRECT_URL = '/admin/login/'
 
@@ -160,3 +154,13 @@ LOGOUT_REDIRECT_URL = '/admin/login/'
 # En desarrollo, puedes usar este backend para ver los correos en la terminal:
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+
+# Configuraciones de sesión
+SESSION_COOKIE_AGE = 60*60*2  # 2 horas
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = False
+# Cambiaremos SESSION_COOKIE_SECURE a True en producción
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = 'Lax'
+
+MESSAGE_TAGS = { msg.DEBUG: 'secondary', msg.INFO: 'info', msg.SUCCESS: 'success', msg.WARNING: 'warning', msg.ERROR: 'danger', }

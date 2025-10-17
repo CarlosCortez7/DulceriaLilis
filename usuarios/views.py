@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
+from django.contrib import messages
 from django.db import IntegrityError
 from .form import FormularioTarea
 from .models import Tareas
@@ -87,8 +88,9 @@ def tarea_eliminada(request, tarea_id):
         tarea.delete()
         return redirect('tareas')
 
-def cerrar_sesion(request):
+def logout_view(request):
     logout(request)
+    messages.info(request, "Has cerrado sesión correctamente.")
     return redirect('home')
 
 def iniciar_sesion(request):
@@ -100,6 +102,7 @@ def iniciar_sesion(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
+            request.session.cycle_key() # [cite: 54] Regenera la clave de sesión para mitigar ataques de fijación de sesión.
             return redirect('tareas')
         else:
             # form.errors ya tiene los mensajes de validación

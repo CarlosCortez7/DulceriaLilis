@@ -15,24 +15,25 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
 from django.contrib import admin
+from django.conf.urls.static import static
 from django.urls import path, include
 
 # Importar vistas
-from productos.views import home, agregar_producto  
-from usuarios.views import (
-    registrarse, iniciar_sesion, cerrar_sesion,
-    tareas, tasks_completed, crear_tarea,
-    tareas_detalles, tarea_completada, tarea_eliminada
-)
+from productos.views import home, agregar_producto, add_to_cart, remove_from_cart, cart_detail
+from usuarios.views import (registrarse, iniciar_sesion, logout_view, tareas, tasks_completed, crear_tarea, tareas_detalles, tarea_completada, tarea_eliminada)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('compras/', include('compras.urls')),  
 
-    # Productos
+    # Productos y Carrito
     path("", home, name='home'),
     path("agregar_producto/", agregar_producto, name='agregar_producto'),
+    path('add_to_cart/<int:product_id>/', add_to_cart, name='add_to_cart'),
+    path('cart/remove/<int:product_id>/', remove_from_cart, name='remove_from_cart'),
+    path('carrito/', cart_detail, name='cart_detail'),
 
     # Usuarios
     path("registrarse/", registrarse, name='registrarse'),
@@ -44,6 +45,8 @@ urlpatterns = [
     path("tareas/<int:tarea_id>/eliminar", tarea_eliminada, name='tarea_eliminada'),
 
     path("iniciar_sesion/", iniciar_sesion, name='iniciar_sesion'),
-    path("logout/", cerrar_sesion, name='logout'),
+    path("logout/", logout_view, name='logout'),
 ]
 
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

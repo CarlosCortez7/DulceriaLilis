@@ -1,4 +1,5 @@
 from django.db import models
+from proveedores.models import Proveedor
 
 
 class Categoria(models.Model):
@@ -11,6 +12,13 @@ class Producto(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True, null=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
+    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    costo = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    stock_actual = models.IntegerField(default=0)
+    sku = models.CharField(max_length=50, unique=True)
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
+    imagen_url = models.ImageField(upload_to='productos/', null=True, blank=True, default='productos/default_product.png')
+    fecha_vencimiento = models.DateField(null=True, blank=True)
      # Nuevo campo para controlar visibilidad
     ESTADO_CHOICES = [
         ('activo', 'Activo'),

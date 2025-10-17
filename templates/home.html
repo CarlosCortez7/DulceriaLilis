@@ -2,10 +2,9 @@
 
 {% block content %}
 <main class="container py-5">
+    <p class="lead">Has visitado esta página {{ visitas }} veces durante esta sesión.</p>
     <section class="card card-body">
         <h1 class="display-1 text-center">Home</h1>
-        <p class="text-center">Esta página está en construcción :)</p>
-        <p>by: Carlos</p>
     </section>
 <!-- Sección de productos activos -->
 <section class="mt-5">
@@ -16,7 +15,7 @@
                 <div class="col-md-4 mb-3">
                     <div class="card h-100">
                         {% if producto.imagen_url %}
-                            <img src="{{ producto.imagen_url }}" class="card-img-top" alt="{{ producto.nombre }}">
+                            <img src="{{ producto.imagen_url.url }}" class="card-img-top" alt="{{ producto.nombre }}">
                         {% else %}
                             <img src="https://via.placeholder.com/150" class="card-img-top" alt="Imagen no disponible">
                         {% endif %}
@@ -24,6 +23,9 @@
                             <h5 class="card-title">{{ producto.nombre }}</h5>
                             <p class="card-text">{{ producto.descripcion }}</p>
                             <p class="card-text"><strong>Cantidad disponible:</strong> {{ producto.stock_actual }}</p>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'add_to_cart' producto.id %}" class="btn btn-success w-100">Añadir al carrito</a>
                         </div>
                     </div>
                 </div>
