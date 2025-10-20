@@ -28,3 +28,10 @@ def agregar_producto(request):
         form = ProductoForm()
     
     return render(request, 'agregar_producto.html', {'form': form})
+
+
+def modulo_productos(request):
+    return render(request, 'modulo_productos.html')
+
+def modulo_inventario(request):
+    return render(request, 'inventario.html')

@@ -111,3 +111,12 @@ def iniciar_sesion(request):
 class CustomLoginView(LoginView):
     template_name = 'iniciar_sesion.html'
     authentication_form = CustomLoginForm
+
+def recuperar_contraseña(request):
+    return render(request, 'recuperar_contraseña.html')
+
+def crear_nueva_contraseña(request):
+    return render(request, 'crear_nueva_contraseña.html')
+
+def modulo_usuarios(request):
+    return render(request, 'CRUD_usuarios.html')

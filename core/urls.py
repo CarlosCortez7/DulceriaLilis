@@ -23,8 +23,9 @@ from productos.views import home, agregar_producto
 from usuarios.views import (
     registrarse, iniciar_sesion, cerrar_sesion,
     tareas, tasks_completed, crear_tarea,
-    tareas_detalles, tarea_completada, tarea_eliminada
+    tareas_detalles, tarea_completada, tarea_eliminada, recuperar_contraseña, crear_nueva_contraseña, modulo_usuarios
 )
+from productos import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -42,7 +43,11 @@ urlpatterns = [
     path("tareas/<int:tarea_id>/", tareas_detalles, name='tareas_detalles'),
     path("tareas/<int:tarea_id>/completado", tarea_completada, name='tarea_completada'),
     path("tareas/<int:tarea_id>/eliminar", tarea_eliminada, name='tarea_eliminada'),
-
+    path("recuperar_contraseña/", recuperar_contraseña, name='recuperar_contraseña'),
+    path("crear_nueva_contraseña/", crear_nueva_contraseña  , name='crear_nueva_contraseña'),
+    path('usuarios/', modulo_usuarios, name='modulo_usuarios'),
+    path('productos/', views.modulo_productos, name='modulo_productos'),
+path('inventario/', views.modulo_inventario, name='modulo_inventario'),
     path("iniciar_sesion/", iniciar_sesion, name='iniciar_sesion'),
     path("logout/", cerrar_sesion, name='logout'),
 ]
