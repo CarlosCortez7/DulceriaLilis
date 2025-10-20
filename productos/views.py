@@ -35,6 +35,7 @@ def agregar_producto(request):
     
     return render(request, 'agregar_producto.html', {'form': form})
 
+# --- INICIO BLOQUE 1 (TU CARRITO) ---
 @login_required
 def add_to_cart(request, product_id):
     """
@@ -105,3 +106,10 @@ def cart_detail(request):
         total_general += subtotal
 
     return render(request, 'productos/cart_detail.html', {'cart_items': cart_items, 'total_general': total_general})
+
+# --- INICIO BLOQUE 2 (MÓDULOS DE TU AMIGO) ---
+def modulo_productos(request):
+    return render(request, 'modulo_productos.html')
+
+def modulo_inventario(request):
+    return render(request, 'inventario.html')

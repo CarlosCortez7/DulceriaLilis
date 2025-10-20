@@ -21,8 +21,16 @@ from django.conf.urls.static import static
 from django.urls import path, include
 
 # Importar vistas
+# --- INICIO DEL BLOQUE CORREGIDO ---
 from productos.views import home, agregar_producto, add_to_cart, remove_from_cart, cart_detail
-from usuarios.views import (registrarse, iniciar_sesion, logout_view, tareas, tasks_completed, crear_tarea, tareas_detalles, tarea_completada, tarea_eliminada)
+from usuarios.views import (
+    registrarse, iniciar_sesion, logout_view,
+    tareas, tasks_completed, crear_tarea,
+    tareas_detalles, tarea_completada, tarea_eliminada, 
+    recuperar_contraseña, crear_nueva_contraseña, modulo_usuarios
+)
+from productos import views
+# --- FIN DEL BLOQUE CORREGIDO ---
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -43,7 +51,11 @@ urlpatterns = [
     path("tareas/<int:tarea_id>/", tareas_detalles, name='tareas_detalles'),
     path("tareas/<int:tarea_id>/completado", tarea_completada, name='tarea_completada'),
     path("tareas/<int:tarea_id>/eliminar", tarea_eliminada, name='tarea_eliminada'),
-
+    path("recuperar_contraseña/", recuperar_contraseña, name='recuperar_contraseña'),
+    path("crear_nueva_contraseña/", crear_nueva_contraseña  , name='crear_nueva_contraseña'),
+    path('usuarios/', modulo_usuarios, name='modulo_usuarios'),
+    path('productos/', views.modulo_productos, name='modulo_productos'),
+    path('inventario/', views.modulo_inventario, name='modulo_inventario'),
     path("iniciar_sesion/", iniciar_sesion, name='iniciar_sesion'),
     path("logout/", logout_view, name='logout'),
 ]

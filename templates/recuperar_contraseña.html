@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Contraseña - Lili's</title>
+    <style>
+        /* Estilos Generales */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        /* Contenedor del Formulario */
+        .login-container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* Logo */
+        .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #d93025; /* Color rojo del logo */
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 20px;
+            font-size: 24px;
+            font-weight: bold;
+            font-family: 'Georgia', serif; /* Una fuente que se asemeja al logo */
+        }
+
+        /* Títulos y Textos */
+        h2 {
+            margin-bottom: 10px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        p {
+            margin-bottom: 25px;
+            color: #666;
+        }
+
+        /* Campos de Texto */
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+        }
+
+        /* Botón Principal */
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8; /* Color azul del botón */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        /* Enlaces Secundarios */
+        .secondary-links a {
+            color: #1a73e8;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="logo">Lili's</div>
+        <h2>Recuperar contraseña</h2>
+        <p>Ingresa tu correo o usuario y te enviaremos un enlace</p>
+        
+        <form>
+            <div class="input-group">
+                <input type="text" id="email_user" name="email_user" placeholder="Correo o nombre de usuario">
+            </div>
+            
+            <button type="submit" class="forgot-link">Enviar instrucciones</button>
+            
+            <div class="secondary-links">
+                <a href="/iniciar_sesion">Volver al login</a>
+                <span>·</span>
+                <a href="/crear_nueva_contraseña">Ya tengo el enlace</a>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

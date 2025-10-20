@@ -1,41 +1,108 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<main class="container">
-    <div class="row">
-        <div class="col-md-6 offset-md-3 mt-4">
-            <form method="post" class="card card-body text-center">
-                <h1>Registrarse</h1>
-                {% csrf_token %}
-                {{ form.as_table }}
-                <button class="btn btn-danger mt-2">Registrarse</button>
-            </form>
-        </div>
-    </div>
-</main>
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .form-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 85vh;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    .form-box {
+        width: 100%;
+        max-width: 450px; /* Un poco más de espacio */
+        background: #ffffff;
+        padding: 2.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px_20px rgba(0,0,0,0.05);
+    }
+    .logo {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background-color: #d93025;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 auto 1.5rem;
+        font-size: 22px;
+        font-weight: bold;
+        font-family: 'Georgia', serif;
+    }
+    /* Estilo específico y robusto para el checkbox */
+    .custom-form-check {
+        display: flex; /* Usamos flexbox para alinear perfectamente */
+        align-items: center; /* Centra verticalmente */
+        text-align: left;
+        padding: .5rem .75rem; /* Simula la altura de los otros campos */
+        border: 1px solid #ced4da;
+        border-radius: .375rem; /* Bordes redondeados de Bootstrap */
+    }
+    .custom-form-check .form-check-input {
+        margin-top: 0; /* Resetea el margen superior */
+        margin-right: 10px; /* Espacio entre el checkbox y el texto */
+    }
+    .custom-form-check .form-check-label {
+        padding-top: 2px; /* Pequeño ajuste vertical del texto */
+    }
+</style>
+
+<div class="form-container">
+    <main class="form-box">
+        <form method="post" class="text-center">
+            
+            <div class="logo">Lili's</div>
+
+            <h1 class="h3 mb-3 fw-normal">Crea tu cuenta</h1>
+            <p class="mb-4 text-muted">Ingresa tus datos para registrarte.</p>
+
+            {% csrf_token %}
+
+            {% for field in form %}
+                {% if field.widget.input_type == 'checkbox' %}
+                    <div class="custom-form-check mb-3">
+                        {{ field }}
+                        <label class="form-check-label" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                    </div>
+                {% else %}
+                    <div class="form-floating mb-3">
+                        {{ field }}
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            
+            <button class="w-100 btn btn-lg btn-primary mt-3" type="submit">Registrarse</button>
+
+            <div class="mt-4 text-center">
+                <small class="text-muted">¿Ya tienes una cuenta? <a href="{% url 'iniciar_sesion' %}">Inicia sesión</a></small>
+            </div>
+
+        </form>
+    </main>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 {% if form.errors %}
 <div id="errores-formulario" style="display:none;">
-    {% for error in form.non_field_errors %}
-        <p><strong>General:</strong> {{ error }}</p>
-    {% endfor %}
-    {% for field in form %}
-        {% for error in field.errors %}
-            <p><strong>{{ field.label }}:</strong> {{ error }}</p>
-        {% endfor %}
-    {% endfor %}
+    {% for error in form.non_field_errors %}<p><strong>General:</strong> {{ error }}</p>{% endfor %}
+    {% for field in form %}{% for error in field.errors %}<p><strong>{{ field.label }}:</strong> {{ error }}</p>{% endfor %}{% endfor %}
 </div>
 <script>
     var errores = document.getElementById('errores-formulario').innerHTML;
     if (errores.trim() !== "") {
-        Swal.fire({
-            icon: 'error',
-            title: 'Errores en el formulario',
-            html: errores,
-            confirmButtonColor: '#d33'
-        });
+        Swal.fire({ icon: 'error', title: 'Errores en el formulario', html: errores, confirmButtonColor: '#0d6efd' });
     }
 </script>
 {% endif %}
+
 {% endblock %}
