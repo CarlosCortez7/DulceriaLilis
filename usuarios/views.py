@@ -103,7 +103,7 @@ def iniciar_sesion(request):
             user = form.get_user()
             login(request, user)
             request.session.cycle_key() # [cite: 54] Regenera la clave de sesión para mitigar ataques de fijación de sesión.
-            return redirect('tareas')
+            return redirect('home')
         else:
             # form.errors ya tiene los mensajes de validación
             return render(request, 'iniciar_sesion.html', {

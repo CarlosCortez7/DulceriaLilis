@@ -2,6 +2,6 @@ Django
 cryptography
 PyMySQL
 python-dotenv
-pillow
+Pillow
 
 # pip install -r requirements.txt
