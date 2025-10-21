@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .main-container {
+        display: flex;
+        gap: 2rem; /* Espacio entre el formulario y la tabla */
+        padding: 2rem;
+        max-width: 1400px;
+        margin: auto;
+    }
+    .form-section {
+        flex: 0 0 350px; /* Ancho fijo para el formulario */
+    }
+    .table-section {
+        flex-grow: 1; /* La tabla ocupa el resto del espacio */
+    }
+    .card {
+        background-color: #fff;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        padding: 1.5rem;
+    }
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .table th, .table td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        vertical-align: middle;
+        border-bottom: 1px solid #dee2e6;
+        white-space: nowrap;
+    }
+    .table th {
+        font-weight: 600;
+        color: #495057;
+    }
+    .table-actions .btn {
+        margin-right: 0.5rem;
+    }
+    .badge {
+        padding: 0.35em 0.65em;
+        font-size: .75em;
+        font-weight: 700;
+        line-height: 1;
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 0.375rem;
+    }
+    .badge-success { background-color: #28a745; }
+    .badge-warning { background-color: #ffc107; color: #212529;}
+    .badge-danger { background-color: #dc3545; }
+    
+    /* Estilos para el Switch de MFA */
+    .form-switch .form-check-input {
+        width: 2em;
+        height: 1em;
+        margin-left: -2.5em;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280,0,0,0.25%29'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: left center;
+        transition: background-position .15s ease-in-out;
+    }
+    .form-switch .form-check-input:checked {
+        background-position: right center;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+    }
+</style>
+
+<div class="main-container">
+    <div class="form-section">
+        <div class="card">
+            <h5 class="mb-4">Formulario de Usuario</h5>
+            <form>
+                <h6>Identificación</h6>
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" placeholder="j.cortes">
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" placeholder="usuario@empresa.cl">
+                </div>
+                <div class="mb-3">
+                    <label for="nombres" class="form-label">Nombres</label>
+                    <input type="text" class="form-control" id="nombres" placeholder="Jorge">
+                </div>
+                <div class="mb-3">
+                    <label for="apellidos" class="form-label">Apellidos</label>
+                    <input type="text" class="form-control" id="apellidos" placeholder="Cortés">
+                </div>
+                <hr class="my-4">
+
+                <h6>Estado y acceso</h6>
+                <div class="mb-3">
+                    <label for="rol" class="form-label">Rol</label>
+                    <select class="form-select" id="rol">
+                        <option selected>Seleccione...</option>
+                        <option value="1">ADMIN</option>
+                        <option value="2">AUDITOR</option>
+                        <option value="3">OPERADOR</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select class="form-select" id="estado">
+                        <option value="1" selected>ACTIVO</option>
+                        <option value="2">BLOQUEADO</option>
+                        <option value="3">INACTIVO</option>
+                    </select>
+                </div>
+                <div class="mb-3 form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="mfa_habilitado">
+                    <label class="form-check-label" for="mfa_habilitado">MFA Habilitado</label>
+                </div>
+                <hr class="my-4">
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="button" class="btn btn-secondary me-md-2">Limpiar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <div class="card">
+            <div class="card-header">
+                <h5>Usuarios</h5>
+                <button class="btn btn-success">Exportar a Excel</button>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" placeholder="Buscar por username o email...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select">
+                        <option selected>Todos los roles</option>
+                        <option value="1">ADMIN</option>
+                        <option value="2">AUDITOR</option>
+                        <option value="3">OPERADOR</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select">
+                        <option selected>Todos los estados</option>
+                        <option value="1">ACTIVO</option>
+                        <option value="2">BLOQUEADO</option>
+                        <option value="3">INACTIVO</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Nombre</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>MFA</th>
+                            <th>Último acceso</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>admin</td>
+                            <td>admin@empresa.cl</td>
+                            <td>Admin Root</td>
+                            <td>ADMIN</td>
+                            <td><span class="badge badge-success">ACTIVO</span></td>
+                            <td>Sí</td>
+                            <td>2025-09-10 08:12</td>
+                            <td class="table-actions">
+                                <button class="btn btn-sm btn-warning">Editar</button>
+                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>auditor1</td>
+                            <td>auditor@empresa.cl</td>
+                            <td>Ana Receptor</td>
+                            <td>AUDITOR</td>
+                            <td><span class="badge badge-warning">INACTIVO</span></td>
+                            <td>No</td>
+                            <td>2025-08-31 19:44</td>
+                            <td class="table-actions">
+                                <button class="btn btn-sm btn-warning">Editar</button>
+                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>oper1</td>
+                            <td>operador@empresa.cl</td>
+                            <td>Oscar Operaciones</td>
+                            <td>OPERADOR</td>
+                            <td><span class="badge badge-danger">BLOQUEADO</span></td>
+                            <td>No</td>
+                            <td>-</td>
+                            <td class="table-actions">
+                                <button class="btn btn-sm btn-warning">Editar</button>
+                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

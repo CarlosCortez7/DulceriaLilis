@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="container py-5">
+    <h1 class="mb-4">Tu Carrito de Compras</h1>
+
+    {% if not cart_items %}
+        <div class="alert alert-info" role="alert">
+            Tu carrito está vacío. ¡<a href="{% url 'home' %}" class="alert-link">Empieza a comprar</a>!
+        </div>
+    {% else %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Imagen</th>
+                        <th scope="col">Producto</th>
+                        <th scope="col" class="text-end">Precio Unitario</th>
+                        <th scope="col" class="text-center">Cantidad</th>
+                        <th scope="col" class="text-end">Subtotal</th>
+                        <th scope="col" class="text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                    <tr>
+                        <td>
+                            {% if item.producto.imagen_url %}
+                                <img src="{{ item.producto.imagen_url.url }}" alt="{{ item.producto.nombre }}" style="width: 60px; height: 60px; object-fit: cover;">
+                            {% else %}
+                                <img src="https://via.placeholder.com/60" alt="Imagen no disponible" style="width: 60px; height: 60px;">
+                            {% endif %}
+                        </td>
+                        <td>{{ item.producto.nombre }}</td>
+                        <td class="text-end">${{ item.producto.precio|floatformat:2 }}</td>
+                        <td class="text-center">{{ item.cantidad }}</td>
+                        <td class="text-end">${{ item.subtotal|floatformat:2 }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'remove_from_cart' item.producto.id %}" class="btn btn-danger btn-sm">Eliminar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+            <div class="card" style="width: 18rem;">
+                <div class="card-body text-end">
+                    <h5 class="card-title">Total General: ${{ total_general|floatformat:2 }}</h5>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</main>
+{% endblock %}

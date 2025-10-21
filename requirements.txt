@@ -1,6 +1,7 @@
-Django>=5.2,<6.0
+Django
 cryptography
 PyMySQL
 python-dotenv
-
+Pillow
+openpyxl
 # pip install -r requirements.txt

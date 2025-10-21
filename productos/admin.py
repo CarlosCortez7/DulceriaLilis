@@ -4,20 +4,19 @@ from .models import Categoria, Producto
 # Definir el modelo inline para Producto
 class ProductoInline(admin.TabularInline):
     model = Producto
-    extra = 1  
-    fields = ('id_interno', 'nombre', 'estado', 'unidad_medida')
-    show_change_link = True  # Para mostrar el enlace a los productos existentes
+    extra = 1 
+    fields = ('sku', 'nombre', 'estado', 'precio_venta', 'uom_venta')
+    show_change_link = True
 
 @admin.register(Categoria)
 class CategoriaAdmin(admin.ModelAdmin):
     list_display = ('id', 'nombre')
     search_fields = ('nombre',)
     ordering = ['nombre']
-    inlines = [ProductoInline]  # Integrando el inline para mostrar productos relacionados
+    inlines = [ProductoInline]
 
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'categoria', 'estado', 'unidad_medida')
-    search_fields = ('nombre','estado', 'unidad_medida')
-    list_filter = ('categoria', 'estado')
-
+    list_display = ('sku', 'nombre', 'categoria', 'estado', 'precio_venta', 'stock_minimo', 'perishable')
+    search_fields = ('sku', 'nombre', 'estado', 'categoria__nombre')
+    list_filter = ('categoria', 'estado', 'perishable', 'control_por_lote')
