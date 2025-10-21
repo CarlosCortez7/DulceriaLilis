@@ -1,18 +1,7 @@
 from django import forms
-from .models import Tareas
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.forms import UserCreationForm
 from .models import Usuario
-
-class FormularioTarea(forms.ModelForm):
-    class Meta:
-        model = Tareas
-        fields = ['titulo', 'descripcion', 'importante']
-        widgets = {
-            'titulo': forms.TextInput(attrs={'class': 'form-control'}),
-            'descripcion': forms.Textarea(attrs={'class': 'form-control'}),
-            'importante': forms.CheckboxInput(attrs={'class': 'form-check-input m-auto'}),
-        }
 
 class CustomLoginForm(AuthenticationForm):
     username = forms.CharField(
@@ -39,16 +28,14 @@ class CustomLoginForm(AuthenticationForm):
 class UsuarioCreationForm(UserCreationForm):
     class Meta:
         model = Usuario
-        fields = ['username', 'email', 'telefono', 'rol', 'estado', 'password1', 'password2']
+        fields = ['username', 'email', 'telefono', 'rol', 'password1', 'password2']
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Ajustar widgets
         self.fields['username'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Usuario'})
         self.fields['email'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Correo electrónico'})
         self.fields['telefono'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Teléfono'})
         self.fields['rol'].widget.attrs.update({'class': 'form-select'})
-        self.fields['estado'].widget.attrs.update({'class': 'form-check-input'})
         self.fields['password1'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Contraseña'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Repetir Contraseña'})
         self.fields['rol'].choices = [choice for choice in self.fields['rol'].choices if choice[0] != 'admin' or choice[0] == 'Administrador']

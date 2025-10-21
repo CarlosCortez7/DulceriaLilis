@@ -1,120 +1,93 @@
 # =====================================
-# PYTHON / DJANGO PROJECT .gitignore
+# PYTHON / DJANGO .gitignore
 # =====================================
 
-# --- Archivos de Python ---
+# --- Bytecode and compiled files ---
 __pycache__/
 *.py[cod]
 *$py.class
 
-# --- Entornos virtuales ---
+# --- Virtual Environments ---
+# Common names for virtual environments. Add yours if different.
 venv/
 env/
 ENV/
 .venv/
+.env/
 .virtualenv/
-venv.bak/
-.env.bak/
 
-# --- Archivos de entorno / variables ---
+# --- Environment variables ---
+# Never commit your .env files containing secrets!
 .env
 *.env
-.env.local
-.env.production
-.env.development
 
-# --- Archivos de configuración del sistema ---
+# --- Operating System Files ---
+# Ignore macOS .DS_Store files
 .DS_Store
+# Ignore Windows thumbnail cache files
 Thumbs.db
+# Ignore Windows desktop configuration files
 desktop.ini
 
-# --- Configuración de VSCode / IDEs ---
+# --- IDE / Editor Configuration ---
 .vscode/
 .idea/
 *.sublime-project
 *.sublime-workspace
 
-# --- Archivos de logs ---
+# --- Log Files ---
 *.log
-*.log.*
 logs/
 log/
-*.out
-*.err
 
-# --- Archivos temporales ---
+# --- Temporary Files ---
 *.tmp
 *.bak
 *.swp
-*.swo
-*.~*
+*.~
 
-# --- Archivos de compilación ---
+# --- Build / Distribution Artifacts ---
 build/
 dist/
 *.egg-info/
 *.egg
-.eggs/
 
-# --- Migrations compiladas ---
-# (Opcional: puedes descomentarlas si prefieres no versionarlas)
- */migrations/*
- !*/migrations/__init__.py
-
-# --- Archivos de bases de datos locales ---
-# SQLite
+# --- Local Database Files ---
+# Ignore SQLite database used for development
 db.sqlite3
 db.sqlite3-journal
 
-# MySQL dumps o backups
-*.sql
-*.sql.gz
-*.dump
+# --- Django Migrations ---
+# It's generally RECOMMENDED to commit migrations.
+# They track your database schema changes. Uncomment below ONLY
+# if you have a specific reason NOT to version them (usually not advised).
+# */migrations/*.py
+# !*/migrations/__init__.py
 
-# --- Archivos estáticos y multimedia ---
+# --- Django Static Files ---
+# Ignore the directory where 'collectstatic' gathers files for production.
 staticfiles/
-static/
+# NOTE: Do NOT ignore your project's main 'static/' directory,
+# as it contains your source CSS, JS, and image files needed in the repo.
+
+# --- Django Media Files ---
+# Ignore the directory where user-uploaded files are stored.
 media/
-uploads/
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.svg
-*.webp
 
-# --- Django cache ---
-*.cache
-*.pyc
-__pycache__/
-django_cache/
-
-# --- Archivos generados por herramientas ---
+# --- Test / Coverage Reports ---
 .coverage
+.coverage.*
 htmlcov/
+pytest_cache/
+.pytest_cache/
+
+# --- Security sensitive files ---
+*.key
+*.pem
+*.cer
+*.crt
+
+# --- Other Tooling ---
+.cache/
 .tox/
 .nox/
-.cache/
-pytest_cache/
-*.pot
-*.mo
-*.py,cover
-
-# --- Archivos de Docker ---
-Dockerfile~
-docker-compose*.yml~
-.docker/
-*.pid
-
-# --- Archivos de seguridad ---
-*.pem
-*.key
-*.crt
-*.csr
-
-# --- Archivos temporales de Jupyter ---
-.ipynb_checkpoints
-
-# --- Archivos de pruebas ---
-test_*.py
-tests/

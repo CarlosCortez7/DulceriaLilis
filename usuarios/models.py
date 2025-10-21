@@ -12,21 +12,9 @@ class Usuario(AbstractUser):
         ('ventas', 'Operador de Ventas'),
         ('finanzas', 'Analista Financiero'),
     ])
-    estado = models.BooleanField(default=True)
-    ultimo_acceso = models.DateTimeField(blank=True, null=True)
+    area_unidad = models.CharField(max_length=100, blank=True, null=True)
     mfa_habilitado = models.BooleanField(default=False)
     observaciones = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.username} ({self.rol})"
-    
-class Tareas(models.Model):
-    titulo = models.CharField(max_length=100)
-    descripcion = models.TextField(blank=True)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_completado = models.DateTimeField(null=True, blank=True)
-    importante = models.BooleanField(default=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.titulo + ' - ' + self.user.username
