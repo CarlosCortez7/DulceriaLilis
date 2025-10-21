@@ -9,8 +9,9 @@ from django.conf import settings
 from django.contrib import admin
 from django.conf.urls.static import static
 from django.urls import path, include
-from productos.views import (home, agregar_producto, add_to_cart, remove_from_cart, cart_detail, modulo_productos, modulo_inventario)
-from usuarios.views import (registrarse, iniciar_sesion, logout_view, recuperar_contraseña, crear_nueva_contraseña, modulo_usuarios)
+from productos.views import (home, agregar_producto, add_to_cart, remove_from_cart, cart_detail, modulo_productos, modulo_inventario,)
+from usuarios.views import (registrarse, iniciar_sesion, logout_view, recuperar_contraseña, crear_nueva_contraseña, modulo_usuarios,)
+from proveedores.views import modulo_proveedores, guardar_proveedor, editar_proveedor, eliminar_proveedor, exportar_excel_proveedores
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -23,7 +24,16 @@ urlpatterns = [
     path('cart/remove/<int:product_id>/', remove_from_cart, name='remove_from_cart'),
     path('carrito/', cart_detail, name='cart_detail'),
     path('productos/', modulo_productos, name='modulo_productos'),
-    path('inventario/', modulo_inventario, name='modulo_inventario'),
+    # Corrige la duplicidad de 'inventario/'
+    path('inventario/', modulo_inventario, name='modulo_inventario'), 
+
+    # Rutas de Proveedores (NUEVAS Y MODIFICADAS)
+    path('modulo_proveedores/', modulo_proveedores, name='modulo_proveedores'),
+    path('guardar_proveedor/', guardar_proveedor, name='guardar_proveedor'),
+    path('editar_proveedor/<int:proveedor_id>/', editar_proveedor, name='editar_proveedor'),
+    path('eliminar_proveedor/<int:proveedor_id>/', eliminar_proveedor, name='eliminar_proveedor'),
+    path('exportar_excel_proveedores/', exportar_excel_proveedores, name='exportar_excel_proveedores'),
+
 
     # Usuarios
     path("registrarse/", registrarse, name='registrarse'),
