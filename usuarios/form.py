@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, UserChangeForm
 from django.contrib.auth.forms import UserCreationForm
 from .models import Usuario
 
@@ -39,3 +39,27 @@ class UsuarioCreationForm(UserCreationForm):
         self.fields['password1'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Contraseña'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Repetir Contraseña'})
         self.fields['rol'].choices = [choice for choice in self.fields['rol'].choices if choice[0] != 'admin' or choice[0] == 'Administrador']
+
+class UsuarioChangeForm(UserChangeForm):
+    # Quitar el campo password para que no se muestre/edite aquí
+    password = None
+
+    class Meta:
+        model = Usuario
+        # Incluir los campos que quieres permitir editar
+        # Usamos los campos de AbstractUser + los tuyos propios
+        fields = ['username', 'email', 'first_name', 'last_name',
+                  'telefono', 'rol', 'is_active', # Usar is_active en lugar de 'estado'
+                  'mfa_habilitado', 'observaciones', 'area_unidad',
+                  'is_staff', 'is_superuser', 'groups', 'user_permissions'] # Campos estándar de permisos
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # (Opcional) Añadir clases de Bootstrap a los campos
+        for field_name, field in self.fields.items():
+            if isinstance(field.widget, forms.CheckboxInput):
+                 field.widget.attrs.update({'class': 'form-check-input'})
+            elif isinstance(field.widget, forms.Select):
+                 field.widget.attrs.update({'class': 'form-select'})
+            elif not isinstance(field.widget, forms.SelectMultiple): # Evitar aplicar a permisos/grupos
+                 field.widget.attrs.update({'class': 'form-control'})

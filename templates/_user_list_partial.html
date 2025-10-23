@@ -1,0 +1,32 @@
+{% comment %} Plantilla parcial solo para las filas de la tabla de usuarios {% endcomment %}
+
+{% for usuario_item in usuarios %}
+<tr>
+    <td>{{ usuario_item.username }}</td>
+    <td>{{ usuario_item.email }}</td>
+    <td>{{ usuario_item.first_name }} {{ usuario_item.last_name }}</td>
+    <td>{{ usuario_item.rol|upper }}</td>
+    <td>
+        {% if usuario_item.is_active %}
+            <span class="badge bg-success">ACTIVO</span> {# Añadidas clases Bootstrap 5 #}
+        {% else %}
+            <span class="badge bg-warning text-dark">INACTIVO</span> {# Añadidas clases Bootstrap 5 #}
+        {% endif %}
+    </td>
+    <td>{% if usuario_item.mfa_habilitado %}Sí{% else %}No{% endif %}</td>
+    <td>{{ usuario_item.last_login|date:"Y-m-d H:i"|default:"-" }}</td>
+    <td class="table-actions">
+        <div class="d-flex gap-2">
+            <a href="{% url 'editar_usuario' usuario_item.id %}" class="btn btn-sm btn-warning">Editar</a>
+            <form action="{% url 'eliminar_usuario' usuario_item.id %}" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar a {{ usuario_item.username }}?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger {% if request.user == usuario_item %}disabled{% endif %}">Eliminar</button>
+            </form>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="8" class="text-center text-muted">No se encontraron usuarios con esos criterios.</td>
+</tr>
+{% endfor %}

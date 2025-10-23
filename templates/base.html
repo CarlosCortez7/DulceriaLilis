@@ -1,56 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es"> <!-- Cambiado a español -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Django CRUD Aplicacion</title>
+    <title>Dulcería Lilis</title> <!-- Título más específico -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <!-- Puedes añadir un enlace a tu CSS personalizado aquí si lo tienes -->
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg bg-danger navbar-dark">
   <div class="container">
-    <a class="navbar-brand" href="/">lilis</a>
+    <!-- Usar {% url 'home' %} para el enlace principal -->
+    <a class="navbar-brand" href="{% url 'home' %}">Lilis</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item">
-          <a href="/" class="nav-link">Home</a>
+          <!-- Usar {% url 'home' %} -->
+          <a href="{% url 'home' %}" class="nav-link">Home</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{% url 'cart_detail' %}">
             Carrito
+            {% if cart_item_count > 0 %} <!-- Mostrar solo si hay items -->
             <span class="badge rounded-pill bg-light text-dark">{{ cart_item_count }}</span>
+            {% endif %}
           </a>
         </li>
 
         {% if user.is_authenticated %}
-        
+
         <li class="nav-item">
           <a href="{% url 'agregar_producto' %}" class="nav-link">Agregar productos</a>
         </li>
         <li class="nav-item">
-          <a href="/usuarios" class="nav-link">Módulo Usuarios</a>
-        <li class="nav-item">
-          <a href="/productos" class="nav-link">modulo productos</a>
+          <!-- Usar {% url 'modulo_usuarios' %} -->
+          <a href="{% url 'modulo_usuarios' %}" class="nav-link">Módulo Usuarios</a>
         </li>
         <li class="nav-item">
-          <a href="/modulo_proveedores" class="nav-link">modulo prooveedores</a>
+          <!-- Usar {% url 'modulo_productos' %} -->
+          <a href="{% url 'modulo_productos' %}" class="nav-link">Módulo Productos</a>
         </li>
         <li class="nav-item">
-        <a class="nav-link" href="{% url 'modulo_inventario' %}">Inventario</a>
+          <!-- Usar {% url 'modulo_proveedores' %} -->
+          <a href="{% url 'modulo_proveedores' %}" class="nav-link">Módulo Proveedores</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'modulo_inventario' %}">Inventario</a>
         </li>
         <li class="nav-item">
           <a href="{% url 'logout' %}" class="nav-link">Cerrar sesión</a>
         </li>
         {% else %}
         <li class="nav-item">
-          <a href="/registrarse" class="nav-link">Registrarse</a>
+          <!-- Usar {% url 'registrarse' %} -->
+          <a href="{% url 'registrarse' %}" class="nav-link">Registrarse</a>
         </li>
         <li class="nav-item">
-          <a href="/iniciar_sesion" class="nav-link">Iniciar sesión</a>
+          <!-- Usar {% url 'iniciar_sesion' %} -->
+          <a href="{% url 'iniciar_sesion' %}" class="nav-link">Iniciar sesión</a>
         </li>
         {% endif %}
       </ul>
@@ -73,6 +84,43 @@
 {% endblock %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- === BLOQUE JAVASCRIPT AÑADIDO === -->
+{% block javascript %}
+{{ block.super }} {# Incluye JS de bloques padre si existe #}
+<script>
+    const productSearchInput = document.getElementById('product-search-input'); // <-- Usa el ID correcto
+    const productTableBody = document.getElementById('product-table-body');
+    const productFilterUrl = "{% url 'modulo_productos' %}"; // URL base
+
+    let productDebounceTimer;
+    function fetchFilteredProducts() {
+        const query = productSearchInput.value;
+        const params = new URLSearchParams({ q: query }); // Solo filtrar por 'q'
+        fetch(`${productFilterUrl}?${params.toString()}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            productTableBody.innerHTML = data.html_from_view;
+        })
+        .catch(error => {
+            console.error('Error al filtrar productos:', error);
+        });
+    }
+    if (productSearchInput) {
+        productSearchInput.addEventListener('input', () => {
+            clearTimeout(productDebounceTimer);
+            productDebounceTimer = setTimeout(fetchFilteredProducts, 300); // Espera 300ms después de dejar de escribir
+        });
+    }
+</script>
+{% endblock %}
+<!-- === FIN BLOQUE JAVASCRIPT === -->
 
 </body>
 </html>
