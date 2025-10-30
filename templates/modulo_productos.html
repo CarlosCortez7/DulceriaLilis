@@ -1,9 +1,8 @@
 {% extends 'base.html' %}
-{% load static %} <!-- Necesario para la imagen por defecto -->
+{% load static %}
 
 {% block content %}
 <style>
-    /* Tu CSS personalizado se mantiene igual */
     body { background-color: #f8f9fa; }
     .main-container { padding: 2rem; max-width: 1400px; margin: auto; }
     .card { background-color: #fff; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1.5rem; margin-bottom: 2rem; }
@@ -15,13 +14,11 @@
 </style>
 
 <div class="main-container">
-    <!-- === FORMULARIO CONECTADO A DJANGO === -->
+    <!-- === FORMULARIO === -->
     <div class="card">
         <h5>{% if edit_mode %}Editar Producto: {{ producto.nombre }}{% else %}Formulario de Producto{% endif %}</h5>
         <form method="POST" action="{% if edit_mode %}{% url 'editar_producto' producto.id %}{% else %}{% url 'agregar_producto' %}{% endif %}" enctype="multipart/form-data">
             {% csrf_token %}
-
-            <!-- Pestañas de Navegación del Formulario -->
             <ul class="nav nav-tabs mt-3" id="productTab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="identificacion-tab" data-bs-toggle="tab" data-bs-target="#identificacion" type="button" role="tab">1. Identificación y Precios</button>
@@ -34,140 +31,87 @@
                 </li>
             </ul>
 
-            <!-- Contenido de las Pestañas -->
             <div class="tab-content" id="productTabContent">
-
-                <!-- Pestaña 1: Identificación y Precios -->
+                <!-- === PESTAÑA 1 === -->
                 <div class="tab-pane fade show active" id="identificacion" role="tabpanel">
                     <div class="row mt-3">
-                        <div class="col-md-6 mb-3">{{ form.sku.label_tag }} {{ form.sku }} {{ form.sku.errors }}</div>
-                        <div class="col-md-6 mb-3">{{ form.ean_upc.label_tag }} {{ form.ean_upc }} {{ form.ean_upc.errors }}</div>
+                        <div class="col-md-6 mb-3">{{ form.sku.label_tag }} {{ form.sku }}</div>
+                        <div class="col-md-6 mb-3">{{ form.ean_upc.label_tag }} {{ form.ean_upc }}</div>
                     </div>
+                    <div class="row"><div class="col-12 mb-3">{{ form.nombre.label_tag }} {{ form.nombre }}</div></div>
+                    <div class="row"><div class="col-12 mb-3">{{ form.descripcion.label_tag }} {{ form.descripcion }}</div></div>
                     <div class="row">
-                        <div class="col-12 mb-3">{{ form.nombre.label_tag }} {{ form.nombre }} {{ form.nombre.errors }}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12 mb-3">{{ form.descripcion.label_tag }} {{ form.descripcion }} {{ form.descripcion.errors }}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">{{ form.categoria.label_tag }} {{ form.categoria }} {{ form.categoria.errors }}</div>
-                        <div class="col-md-4 mb-3">{{ form.marca.label_tag }} {{ form.marca }} {{ form.marca.errors }}</div>
-                        <div class="col-md-4 mb-3">{{ form.modelo.label_tag }} {{ form.modelo }} {{ form.modelo.errors }}</div>
+                        <div class="col-md-4 mb-3">{{ form.categoria.label_tag }} {{ form.categoria }}</div>
+                        <div class="col-md-4 mb-3">{{ form.marca.label_tag }} {{ form.marca }}</div>
+                        <div class="col-md-4 mb-3">{{ form.modelo.label_tag }} {{ form.modelo }}</div>
                     </div>
                     <hr>
                     <h6>Unidades y Precios</h6>
                     <div class="row">
-                        <div class="col-md-4 mb-3">{{ form.uom_compra.label_tag }} {{ form.uom_compra }} {{ form.uom_compra.errors }}</div>
-                        <div class="col-md-4 mb-3">{{ form.uom_venta.label_tag }} {{ form.uom_venta }} {{ form.uom_venta.errors }}</div>
-                        <div class="col-md-4 mb-3">{{ form.factor_conversion.label_tag }} {{ form.factor_conversion }} {{ form.factor_conversion.errors }}</div>
+                        <div class="col-md-4 mb-3">{{ form.uom_compra.label_tag }} {{ form.uom_compra }}</div>
+                        <div class="col-md-4 mb-3">{{ form.uom_venta.label_tag }} {{ form.uom_venta }}</div>
+                        <div class="col-md-4 mb-3">{{ form.factor_conversion.label_tag }} {{ form.factor_conversion }}</div>
                     </div>
                     <div class="row">
-                        <div class="col-md-4 mb-3">{{ form.costo_estandar.label_tag }} {{ form.costo_estandar }} {{ form.costo_estandar.errors }}</div>
-                        <div class="col-md-4 mb-3">{{ form.precio_venta.label_tag }} {{ form.precio_venta }} {{ form.precio_venta.errors }}</div>
-                        <div class="col-md-4 mb-3">{{ form.impuesto_iva.label_tag }} {{ form.impuesto_iva }} {{ form.impuesto_iva.errors }}</div>
+                        <div class="col-md-4 mb-3">{{ form.costo_estandar.label_tag }} {{ form.costo_estandar }}</div>
+                        <div class="col-md-4 mb-3">{{ form.precio_venta.label_tag }} {{ form.precio_venta }}</div>
+                        <div class="col-md-4 mb-3">{{ form.impuesto_iva.label_tag }} {{ form.impuesto_iva }}</div>
                     </div>
                 </div>
 
-                <!-- Pestaña 2: Stock y Control -->
+                <!-- === PESTAÑA 2 === -->
                 <div class="tab-pane fade" id="stock" role="tabpanel">
                     <div class="row mt-3">
-                        <div class="col-md-4 mb-3">{{ form.stock_minimo.label_tag }} {{ form.stock_minimo }} {{ form.stock_minimo.errors }}</div>
-                        <div class="col-md-4 mb-3">{{ form.stock_maximo.label_tag }} {{ form.stock_maximo }} {{ form.stock_maximo.errors }}</div>
-                        <div class="col-md-4 mb-3">{{ form.punto_reorden.label_tag }} {{ form.punto_reorden }} {{ form.punto_reorden.errors }}</div>
+                        <div class="col-md-4 mb-3">{{ form.stock_minimo.label_tag }} {{ form.stock_minimo }}</div>
+                        <div class="col-md-4 mb-3">{{ form.stock_maximo.label_tag }} {{ form.stock_maximo }}</div>
+                        <div class="col-md-4 mb-3">{{ form.punto_reorden.label_tag }} {{ form.punto_reorden }}</div>
                     </div>
                     <hr>
                     <h6>Control Especial</h6>
-                    <div class="form-check form-switch mb-3">
-                        {{ form.perishable }} {{ form.perishable.label_tag }} {{ form.perishable.errors }}
-                    </div>
-                    <div class="form-check form-switch mb-3">
-                        {{ form.control_por_lote }} {{ form.control_por_lote.label_tag }} {{ form.control_por_lote.errors }}
-                    </div>
-                    <div class="form-check form-switch mb-3">
-                        {{ form.control_por_serie }} {{ form.control_por_serie.label_tag }} {{ form.control_por_serie.errors }}
-                    </div>
+                    <div class="form-check form-switch mb-3">{{ form.perishable }} {{ form.perishable.label_tag }}</div>
+                    <div class="form-check form-switch mb-3">{{ form.control_por_lote }} {{ form.control_por_lote.label_tag }}</div>
+                    <div class="form-check form-switch mb-3">{{ form.control_por_serie }} {{ form.control_por_serie.label_tag }}</div>
                 </div>
 
-                <!-- Pestaña 3: Archivos y Estado -->
+                <!-- === PESTAÑA 3 === -->
                 <div class="tab-pane fade" id="relaciones" role="tabpanel">
-                     <h6 class="mt-3">Relaciones y soporte</h6>
-                     <div class="row">
-                         <div class="col-md-6 mb-3">
-                              {{ form.imagen.label_tag }}
-                              {{ form.imagen }}
-                              {% if form.imagen.errors %}
-                                <div class="invalid-feedback d-block">{{ form.imagen.errors }}</div>
-                              {% endif %}
-                              {% if form.instance.pk and form.instance.imagen %}
-                                <p class="mt-1 mb-0 small text-muted">Actual: <a href="{{ form.instance.imagen.url }}" target="_blank">{{ form.instance.imagen.name }}</a></p>
-                              {% endif %}
-                         </div>
-                         <div class="col-md-6 mb-3">
-                              {{ form.ficha_tecnica.label_tag }}
-                              {{ form.ficha_tecnica }}
-                              {% if form.ficha_tecnica.errors %}
-                                <div class="invalid-feedback d-block">{{ form.ficha_tecnica.errors }}</div>
-                              {% endif %}
-                              {% if form.instance.pk and form.instance.ficha_tecnica %}
-                                <p class="mt-1 mb-0 small text-muted">Actual: <a href="{{ form.instance.ficha_tecnica.url }}" target="_blank">{{ form.instance.ficha_tecnica.name }}</a></p>
-                              {% endif %}
-                         </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6 mb-3">{{ form.imagen.label_tag }} {{ form.imagen }}</div>
+                        <div class="col-md-6 mb-3">{{ form.ficha_tecnica.label_tag }} {{ form.ficha_tecnica }}</div>
                     </div>
                     <hr>
-                    <h6>Derivados (solo lectura)</h6>
-                    <p class="text-muted small">Estos campos se calculan automáticamente.</p>
-                     <div class="row">
-                          <div class="col-md-4 mb-3">
-                             <label class="form-label">Stock Actual</label>
-                             <input type="text" class="form-control bg-light" value="N/A" readonly disabled title="Se calcula con los movimientos de inventario">
-                         </div>
-                          <div class="col-md-4 mb-3">
-                             <label class="form-label">Alerta Bajo Stock</label>
-                             <input type="text" class="form-control bg-light" value="N/A" readonly disabled title="Se calcula comparando stock actual y stock mínimo">
-                         </div>
-                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Alerta por Vencer</label>
-                            <input type="text" class="form-control bg-light" value="N/A" readonly disabled title="Se calcula si el producto es perecible y tiene lotes próximos a vencer">
-                        </div>
-                    </div>
-                     <hr>
-                     <h6>Estado del Producto</h6>
-                     <div class="row">
-                          <div class="col-md-4 mb-3">
-                              {{ form.estado.label_tag }}
-                              {{ form.estado }}
-                              {{ form.estado.errors }}
-                          </div>
-                     </div>
+                    <h6>Estado</h6>
+                    <div class="col-md-4 mb-3">{{ form.estado.label_tag }} {{ form.estado }}</div>
                 </div>
             </div>
 
             <div class="d-flex justify-content-end mt-4">
-                {% if not edit_mode %}
-                <button type="reset" class="btn btn-secondary me-2">Limpiar</button>
+                {% if edit_mode %}
+                    <a href="{% url 'modulo_productos' %}" class="btn btn-secondary me-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
                 {% else %}
-                 <a href="{% url 'modulo_productos' %}" class="btn btn-secondary me-2">Cancelar Edición</a>
+                    <button type="reset" class="btn btn-secondary me-2">Limpiar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
                 {% endif %}
-                <button type="submit" class="btn btn-primary">
-                    {% if edit_mode %}Actualizar Producto{% else %}Guardar Producto{% endif %}
-                </button>
             </div>
         </form>
     </div>
 
-    <!-- === TABLA CONECTADA A DJANGO Y AJAX === -->
+    <!-- === TABLA CON PAGINADOR AJAX === -->
     <div class="card">
         <div class="card-header">
             <h5>Productos</h5>
             <button class="btn btn-success">Exportar a Excel</button>
         </div>
-        <!-- Barra de Búsqueda (sin form, con ID) -->
-        <div class="row mb-3 mt-3">
-             <div class="col-md-5">
-                 <input type="text" class="form-control" id="product-search-input" name="q" placeholder="Buscar por SKU o nombre..." value="{{ query|default:'' }}">
-             </div>
-             <!-- Botones Buscar/Limpiar eliminados -->
+
+        <!-- 🔍 Buscador -->
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <input type="text" class="form-control" id="product-search-input" placeholder="Buscar por SKU o nombre..." value="{{ query|default:'' }}">
+            </div>
         </div>
+
+        <!-- 📋 Tabla -->
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
@@ -180,9 +124,7 @@
                         <th>Acciones</th>
                     </tr>
                 </thead>
-                <!-- Cuerpo de la tabla con ID para AJAX -->
                 <tbody id="product-table-body">
-                    <!-- Incluir el parcial que contiene las filas -->
                     {% include 'productos/_product_list_partial.html' %}
                 </tbody>
             </table>
@@ -192,65 +134,60 @@
 {% endblock %}
 
 {% block javascript %}
-{{ block.super }} {# Incluye JS de bloques padre si existe #}
+{{ block.super }}
 <script>
-    // Script para filtros AJAX de PRODUCTOS
-    const productSearchInput = document.getElementById('product-search-input');
-    const productTableBody = document.getElementById('product-table-body');
-    // Asegúrate de que la URL 'modulo_productos' existe y es correcta
-    const productFilterUrl = "{% url 'modulo_productos' %}";
+const productSearchInput = document.getElementById('product-search-input');
+const productTableBody = document.getElementById('product-table-body');
+const productFilterUrl = "{% url 'modulo_productos' %}";
+let productDebounceTimer;
 
-    let productDebounceTimer;
+function fetchFilteredProducts(url = null) {
+  const query = productSearchInput.value;
+  const params = new URLSearchParams({ q: query });
+  const fetchUrl = url ? url : `${productFilterUrl}?${params.toString()}`;
 
-    function fetchFilteredProducts() {
-        const query = productSearchInput.value;
-        const params = new URLSearchParams({ q: query }); // Solo filtrar por 'q'
+  if (productTableBody) productTableBody.style.opacity = '0.5';
 
-        // Añadir feedback visual mientras carga (opcional)
-        if(productTableBody) productTableBody.style.opacity = '0.5';
-
-        fetch(`${productFilterUrl}?${params.toString()}`, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest', // Header AJAX
-                'Accept': 'application/json',
-            }
-        })
-        .then(response => {
-            if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
-            return response.json();
-         })
-        .then(data => {
-            if (data.html_from_view && productTableBody) {
-                productTableBody.innerHTML = data.html_from_view;
-            } else {
-                console.error('Respuesta JSON no contiene html_from_view o falta productTableBody:', data);
-            }
-        })
-        .catch(error => {
-            console.error('Error al filtrar productos:', error);
-            // Mostrar un mensaje de error al usuario aquí podría ser útil
-        })
-        .finally(() => {
-             // Quitar feedback visual (opcional)
-             if(productTableBody) productTableBody.style.opacity = '1';
-        });
+  fetch(fetchUrl, {
+    method: 'GET',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'Accept': 'application/json',
     }
-
-    if (productSearchInput && productTableBody) { // Verifica que ambos elementos existan
-        productSearchInput.addEventListener('input', () => {
-            clearTimeout(productDebounceTimer);
-            productDebounceTimer = setTimeout(() => {
-                fetchFilteredProducts();
-            }, 300); // Espera 300ms
-        });
-        console.log("Listener para búsqueda de productos añadido.");
-    } else {
-        console.error("No se encontró el input de búsqueda ('#product-search-input') o el cuerpo de la tabla ('#product-table-body'). Verifica los IDs.");
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.html_from_view) {
+      productTableBody.innerHTML = data.html_from_view;
+      attachPaginationListeners(); // Reasignar eventos de paginación
     }
+  })
+  .catch(error => console.error('Error al filtrar productos:', error))
+  .finally(() => {
+    if (productTableBody) productTableBody.style.opacity = '1';
+  });
+}
 
-    // Asegúrate de que el script para filtros de USUARIOS (si existe) no interfiera
-    // y use variables/IDs diferentes si está en el mismo bloque.
+// 🔍 Buscar mientras escribe
+if (productSearchInput && productTableBody) {
+  productSearchInput.addEventListener('input', () => {
+    clearTimeout(productDebounceTimer);
+    productDebounceTimer = setTimeout(fetchFilteredProducts, 300);
+  });
+}
 
+// 🔄 Paginación AJAX
+function attachPaginationListeners() {
+  document.querySelectorAll('.pagination a').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const url = this.href;
+      fetchFilteredProducts(url);
+    });
+  });
+}
+
+// Ejecutar al inicio
+attachPaginationListeners();
 </script>
 {% endblock %}

@@ -7,7 +7,7 @@ from .forms import ProductoForm # Asumiendo que tienes un ProductoForm en forms.
 from django.contrib.auth.decorators import login_required 
 from django.template.loader import render_to_string
 from django.http import JsonResponse
-
+from django.core.paginator import Paginator, EmptyPage,PageNotAnInteger
 
 # Create your views here.
 
@@ -135,6 +135,26 @@ def modulo_productos(request):
         'query': query, # Pasar el query actual para mostrarlo en el input
         'edit_mode': False
     }
+    # --- Lógica de Paginación ---
+    paginator = Paginator(productos, 2)  # Mostrar 2 productos por página
+    page_number = request.GET.get('page')
+
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+    # Si page_number no es un número, muestra la primera página
+        page_obj = paginator.page(1)
+    except EmptyPage:
+    # Si la página está fuera de rango, muestra la última
+        page_obj = paginator.page(paginator.num_pages)
+    
+    params=request.GET.copy()
+    params.pop('page',None)
+
+    querystring=params.urlencode()
+    
+    return render(request, 'modulo_productos.html', {**context, 'productos': page_obj, 'page_obj': page_obj, 'querystring': querystring})
+
 
     # --- Respuesta Diferenciada (Normal vs AJAX) ---
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
