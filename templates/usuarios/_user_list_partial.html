@@ -8,9 +8,9 @@
     <td>{{ usuario_item.rol|upper }}</td>
     <td>
         {% if usuario_item.is_active %}
-            <span class="badge bg-success">ACTIVO</span> {# Añadidas clases Bootstrap 5 #}
+            <span class="badge bg-success">ACTIVO</span>
         {% else %}
-            <span class="badge bg-warning text-dark">INACTIVO</span> {# Añadidas clases Bootstrap 5 #}
+            <span class="badge bg-warning text-dark">INACTIVO</span>
         {% endif %}
     </td>
     <td>{% if usuario_item.mfa_habilitado %}Sí{% else %}No{% endif %}</td>

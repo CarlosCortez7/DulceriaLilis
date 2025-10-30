@@ -17,11 +17,9 @@ from django.http import JsonResponse
 # Create your views here.
 
 def home(request):
-    """Vista simple para la página de inicio."""
     return render(request, 'home.html')
 
 def registrarse(request):
-    """Vista para el registro de nuevos usuarios."""
     if request.method == 'GET':
         form = UsuarioCreationForm()
     else:
@@ -33,19 +31,17 @@ def registrarse(request):
             return redirect('home')
         else:
              messages.error(request, 'Error en el registro. Revisa los datos.')
-    return render(request, 'registrarse.html', {'form': form})
+    return render(request, 'usuarios/registrarse.html', {'form': form})
 
 def logout_view(request):
-    """Vista para cerrar sesión."""
     logout(request)
     messages.info(request, "Has cerrado sesión correctamente.")
     return redirect('home')
 
 def iniciar_sesion(request):
-    """Vista para iniciar sesión."""
     if request.method == 'GET':
         form = CustomLoginForm()
-        return render(request, 'iniciar_sesion.html', {'form': form})
+        return render(request, 'usuarios/iniciar_sesion.html', {'form': form})
     else:
         form = CustomLoginForm(data=request.POST)
         if form.is_valid():
@@ -60,24 +56,17 @@ def iniciar_sesion(request):
             })
 
 class CustomLoginView(LoginView):
-    """Vista basada en clase para login (alternativa a la función)."""
     template_name = 'iniciar_sesion.html'
     authentication_form = CustomLoginForm
 
-def recuperar_contraseña(request):
-    """Vista placeholder para recuperar contraseña."""
-    return render(request, 'recuperar_contraseña.html')
+def recuperar_contrasenea(request):
+    return render(request, 'usuarios/recuperar_contrasena.html')
 
-def crear_nueva_contraseña(request):
-    """Vista placeholder para crear nueva contraseña."""
-    return render(request, 'crear_nueva_contraseña.html')
+def crear_nueva_contrasena(request):
+    return render(request, 'usuarios/crear_nueva_contrasena.html')
 
 @login_required
 def modulo_usuarios(request):
-    """
-    Muestra la lista de usuarios (filtrada) y formulario para agregar.
-    Responde a peticiones normales y AJAX para filtros dinámicos.
-    """
     # --- Lógica de Filtrado ---
     query = request.GET.get('q', '')
     rol_filtro = request.GET.get('rol_filtro', '')
@@ -126,7 +115,7 @@ def modulo_usuarios(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         # Si es AJAX (desde el filtro), renderiza SOLO la tabla parcial
         html = render_to_string(
-            template_name="_user_list_partial.html", # Plantilla solo con el bucle y <tr>
+            template_name="usuarios/_user_list_partial.html",
             context={'usuarios': usuarios, 'request': request} # Pasar request si se usa en el parcial
         )
         # Devolver el HTML como parte de una respuesta JSON
@@ -135,7 +124,7 @@ def modulo_usuarios(request):
     else:
         # Si es una petición normal (GET o POST con error), renderiza la página completa
         # Asegúrate de que el nombre del template sea el correcto
-        return render(request, 'modulo_usuarios.html', context)
+        return render(request, 'usuarios/modulo_usuarios.html', context)
 
 @login_required # Proteger la vista
 def editar_usuario(request, user_id):

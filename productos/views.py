@@ -27,7 +27,6 @@ def home(request):
     else:
         form = ProductoForm()
 
-    # Necesitas pasar Categorias y Medidas si el form está en home.html también
     categorias = Categoria.objects.all()
     context = {
         'productos': productos,
@@ -36,28 +35,20 @@ def home(request):
         'categorias': categorias,
         'MEDIDA_CHOICES': MEDIDA_CHOICES
     }
-    return render(request, 'home.html', context)
+    return render(request, 'productos/home.html', context)
 
 def agregar_producto(request):
     if request.method == 'POST':
-        # Añadir request.FILES para manejar subida de archivos (imagen, ficha)
         form = ProductoForm(request.POST, request.FILES or None)
         if form.is_valid():
             form.save()
             messages.success(request, 'Producto agregado correctamente.')
-            # Redirigir a la lista de productos
             return redirect('modulo_productos')
         else:
             messages.error(request, 'Error al agregar el producto. Revisa el formulario.')
-            # Idealmente, volver a mostrar el formulario con errores en modulo_productos
-            # Para simplificar, redirigimos
             return redirect('modulo_productos')
     else:
-        # Si alguien intenta acceder a esta URL por GET, redirigir
         return redirect('modulo_productos')
-
-    # Este render probablemente ya no se usa si el form está en modulo_productos.html
-    # return render(request, 'agregar_producto.html', {'form': form})
 
 @login_required
 def add_to_cart(request, product_id):
@@ -66,12 +57,11 @@ def add_to_cart(request, product_id):
     product_id_str = str(product_id)
     cantidad = carrito.get(product_id_str, 0) + 1
 
-    # TODO: Implementar lógica de cálculo y verificación de stock real
     carrito[product_id_str] = cantidad
     request.session['carrito'] = carrito
     request.session.modified = True
     messages.success(request, f'Producto "{producto.nombre}" agregado al carrito.')
-    return redirect(request.META.get('HTTP_REFERER', 'home')) # Volver a la página anterior
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 def remove_from_cart(request, product_id):
     carrito = request.session.get('carrito', {})
@@ -89,14 +79,13 @@ def cart_detail(request):
     cart_items = []
     total_general = 0
     product_ids = carrito.keys()
-    # Optimizar consulta con select_related
     productos_en_carrito = Producto.objects.filter(id__in=product_ids).select_related('categoria')
 
     for producto in productos_en_carrito:
         product_id_str = str(producto.id)
         cantidad = carrito[product_id_str]
         subtotal = 0
-        if producto.precio_venta: # Verificar si hay precio
+        if producto.precio_venta:
             subtotal = producto.precio_venta * cantidad
 
         cart_items.append({
@@ -111,9 +100,8 @@ def cart_detail(request):
 # --- VISTA CORREGIDA ---
 def modulo_productos(request):
     """ Muestra la lista de productos (filtrada) y formulario. Responde a peticiones normales y AJAX para filtros dinámicos. """
-    # --- Lógica de Filtrado (igual que antes) ---
     query = request.GET.get('q', '')
-    productos = Producto.objects.all().select_related('categoria') # Empezar con todos
+    productos = Producto.objects.all().select_related('categoria')
 
     if query:
         productos = productos.filter(
@@ -121,9 +109,7 @@ def modulo_productos(request):
         )
     productos = productos.order_by('nombre')
 
-    # --- Lógica Formulario Agregar (solo para GET inicial o POST con error) ---
-    # El POST real lo maneja 'agregar_producto'
-    form = ProductoForm() # Siempre mostrar un form vacío aquí
+    form = ProductoForm()
     categorias = Categoria.objects.all()
 
     # --- Contexto Base ---
@@ -132,11 +118,11 @@ def modulo_productos(request):
         'categorias': categorias,
         'MEDIDA_CHOICES': MEDIDA_CHOICES,
         'form': form,
-        'query': query, # Pasar el query actual para mostrarlo en el input
+        'query': query,
         'edit_mode': False
     }
     # --- Lógica de Paginación ---
-    paginator = Paginator(productos, 2)  # Mostrar 2 productos por página
+    paginator = Paginator(productos, 2)  
     page_number = request.GET.get('page')
 
     try:
@@ -153,7 +139,7 @@ def modulo_productos(request):
 
     querystring=params.urlencode()
     
-    return render(request, 'modulo_productos.html', {**context, 'productos': page_obj, 'page_obj': page_obj, 'querystring': querystring})
+    return render(request, 'productos/modulo_productos.html', {**context, 'productos': page_obj, 'page_obj': page_obj, 'querystring': querystring})
 
 
     # --- Respuesta Diferenciada (Normal vs AJAX) ---
@@ -170,7 +156,7 @@ def modulo_productos(request):
         return render(request, 'modulo_productos.html', context)
 
 def modulo_inventario(request):
-    return render(request, 'inventario.html') # Asume que tienes 'inventario.html'
+    return render(request, 'productos/inventario.html') # Asume que tienes 'inventario.html'
 
 @login_required
 def eliminar_producto(request, product_id):

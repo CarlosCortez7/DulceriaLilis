@@ -1,12 +1,12 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 #se ocupara para el recuperar contraseña pero por el momento no se usa
-from usuarios.views import (registrarse, iniciar_sesion, logout_view, recuperar_contraseña, crear_nueva_contraseña, modulo_usuarios, eliminar_usuario, editar_usuario)
+from usuarios.views import (registrarse, iniciar_sesion, logout_view, recuperar_contrasenea, crear_nueva_contrasena, modulo_usuarios, eliminar_usuario, editar_usuario)
 
 urlpatterns = [
     path("registrarse/", registrarse, name='registrarse'),
-    path("recuperar_contraseña/", recuperar_contraseña, name='recuperar_contraseña'),
-    path("crear_nueva_contraseña/", crear_nueva_contraseña, name='crear_nueva_contraseña'),
+    path("recuperar_contrasenea/", recuperar_contrasenea, name='recuperar_contrasena'),
+    path("crear_nueva_contrasena/", crear_nueva_contrasena, name='crear_nueva_contrasena'),
     path('usuarios/', modulo_usuarios, name='modulo_usuarios'),
     path("iniciar_sesion/", iniciar_sesion, name='iniciar_sesion'),
     path('eliminar_usuario/<int:user_id>/', eliminar_usuario, name='eliminar_usuario'),
