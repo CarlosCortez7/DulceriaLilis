@@ -101,7 +101,7 @@
     <div class="card">
         <div class="card-header">
             <h5>Productos</h5>
-            <button class="btn btn-success">Exportar a Excel</button>
+            <a href="{% url 'exportar_excel_productos' %}" class="btn btn-success" id="export-excel-btn-product">Exportar a Excel</a>
         </div>
 
         <!-- 🔍 Buscador -->
@@ -138,6 +138,8 @@
 <script>
 const productSearchInput = document.getElementById('product-search-input');
 const productTableBody = document.getElementById('product-table-body');
+const productTableCard = productTableBody.closest('.card'); // Obtener la tarjeta que contiene la tabla
+const productExportBtn = document.getElementById('export-excel-btn-product');
 const productFilterUrl = "{% url 'modulo_productos' %}";
 let productDebounceTimer;
 
@@ -145,6 +147,9 @@ function fetchFilteredProducts(url = null) {
   const query = productSearchInput.value;
   const params = new URLSearchParams({ q: query });
   const fetchUrl = url ? url : `${productFilterUrl}?${params.toString()}`;
+
+  // Actualizar el enlace de exportación
+  productExportBtn.href = `{% url 'exportar_excel_productos' %}?${params.toString()}`;
 
   if (productTableBody) productTableBody.style.opacity = '0.5';
 
@@ -179,15 +184,20 @@ if (productSearchInput && productTableBody) {
 // 🔄 Paginación AJAX
 function attachPaginationListeners() {
   document.querySelectorAll('.pagination a').forEach(link => {
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      const url = this.href;
-      fetchFilteredProducts(url);
-    });
+    if (link.dataset.hasListener !== 'true') {
+      link.dataset.hasListener = 'true';
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const url = this.href;
+        fetchFilteredProducts(url);
+      });
+    }
   });
 }
 
 // Ejecutar al inicio
-attachPaginationListeners();
+document.addEventListener('DOMContentLoaded', function() {
+    attachPaginationListeners();
+});
 </script>
 {% endblock %}

@@ -13,6 +13,11 @@ from django.db.models import Q
 # Importar para renderizar solo una parte (AJAX)
 from django.template.loader import render_to_string
 from django.http import JsonResponse
+# Para exportar a Excel
+from django.http import HttpResponse
+import openpyxl
+# Importar para paginación
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Create your views here.
 
@@ -104,19 +109,37 @@ def modulo_usuarios(request):
     else:
         form = UsuarioCreationForm()
 
+    # --- Lógica de Paginación ---
+    paginator = Paginator(usuarios, 5) # 5 usuarios por página
+    page_number = request.GET.get('page')
+
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    # Conservar parámetros de búsqueda en la paginación
+    params = request.GET.copy()
+    params.pop('page', None)
+    querystring = params.urlencode()
+
     context = {
-        'usuarios': usuarios,
+        'usuarios': page_obj, # Usar el objeto de página en lugar de la lista completa
+        'page_obj': page_obj,
+        'querystring': querystring,
         'form': form,
         'ROL_CHOICES': ROL_CHOICES,
-        'edit_mode': False
+        'edit_mode': False,
     }
 
     # --- Respuesta Diferenciada (Normal vs AJAX) ---
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         # Si es AJAX (desde el filtro), renderiza SOLO la tabla parcial
         html = render_to_string(
-            template_name="usuarios/_user_list_partial.html",
-            context={'usuarios': usuarios, 'request': request} # Pasar request si se usa en el parcial
+            template_name="usuarios/_user_list_partial.html", # Ruta correcta para la plantilla parcial
+            context=context # Pasamos el contexto completo que ya tiene page_obj
         )
         # Devolver el HTML como parte de una respuesta JSON
         data_dict = {"html_from_view": html}
@@ -158,7 +181,7 @@ def editar_usuario(request, user_id):
         'ROL_CHOICES': ROL_CHOICES # Necesario si el form se muestra en la misma página
     }
     # Renderizar la MISMA plantilla que modulo_usuarios
-    return render(request, 'modulo_usuarios.html', context)
+    return render(request, 'usuarios/modulo_usuarios.html', context)
 
 
 @login_required
@@ -181,3 +204,52 @@ def eliminar_usuario(request, user_id):
     else:
         messages.warning(request, "La acción de eliminar debe hacerse mediante POST.")
         return redirect('modulo_usuarios')
+
+@login_required
+def exportar_excel_usuarios(request):
+    """
+    Genera un archivo Excel con la lista de usuarios, aplicando los filtros actuales.
+    """
+    # 1. Replicar la lógica de filtrado de la vista principal
+    query = request.GET.get('q', '')
+    rol_filtro = request.GET.get('rol_filtro', '')
+    estado_filtro = request.GET.get('estado_filtro', '')
+    usuarios = Usuario.objects.all()
+
+    if query:
+        usuarios = usuarios.filter(
+            Q(username__icontains=query) | Q(email__icontains=query) |
+            Q(first_name__icontains=query) | Q(last_name__icontains=query)
+        )
+    if rol_filtro:
+        usuarios = usuarios.filter(rol=rol_filtro)
+    if estado_filtro == 'activo':
+        usuarios = usuarios.filter(is_active=True)
+    elif estado_filtro == 'inactivo':
+        usuarios = usuarios.filter(is_active=False)
+    
+    usuarios = usuarios.order_by('username')
+
+    # 2. Crear el libro de Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Usuarios"
+
+    # Escribir encabezados
+    headers = ["ID", "Username", "Email", "Nombre", "Apellido", "Rol", "Estado", "Último Acceso"]
+    ws.append(headers)
+
+    # Escribir datos de cada usuario
+    for usuario in usuarios:
+        ws.append([
+            usuario.id, usuario.username, usuario.email, usuario.first_name, usuario.last_name,
+            usuario.get_rol_display(), "Activo" if usuario.is_active else "Inactivo",
+            usuario.last_login.strftime('%Y-%m-%d %H:%M:%S') if usuario.last_login else "Nunca"
+        ])
+
+    # 3. Configurar la respuesta HTTP para descargar el archivo
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=lista_usuarios.xlsx'
+    wb.save(response)
+
+    return response

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Producto
+from .models import Producto, MovimientoInventario
 
 class ProductoForm(forms.ModelForm):
     class Meta:
@@ -35,4 +35,29 @@ class ProductoForm(forms.ModelForm):
             'imagen': forms.ClearableFileInput(attrs={'class': 'form-control mb-3'}),
             'ficha_tecnica': forms.ClearableFileInput(attrs={'class': 'form-control mb-3'}),
             'estado': forms.Select(attrs={'class': 'form-select mb-3'}),
+        }
+
+class MovimientoInventarioForm(forms.ModelForm):
+    # Campo para buscar producto por SKU, no está en el modelo directamente
+    sku_producto = forms.CharField(
+        label="Producto (SKU)",
+        max_length=100,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SKU-0001'})
+    )
+
+    class Meta:
+        model = MovimientoInventario
+        fields = [
+            'sku_producto', 'tipo_movimiento', 'cantidad', 'documento_referencia', 
+            'observaciones', 'lote', 'serie', 'fecha_vencimiento'
+        ]
+        widgets = {
+            'tipo_movimiento': forms.Select(attrs={'class': 'form-select'}),
+            'cantidad': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '10'}),
+            'documento_referencia': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'OC-101 / FAC-900'}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 1, 'placeholder': 'Notas de operación...'}),
+            'lote': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'L-2025-001'}),
+            'serie': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SN123456789'}),
+            'fecha_vencimiento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }

@@ -1,5 +1,6 @@
 from django.db import models
-
+from django.core.validators import MinValueValidator
+from django.conf import settings
 # --- CHOICES A NIVEL DE MÓDULO ---
 ESTADO_CHOICES = [
     ('activo', 'Activo'),
@@ -38,6 +39,7 @@ class Producto(models.Model):
     impuesto_iva = models.DecimalField(max_digits=5, decimal_places=2, default=19.00)
 
     # --- Stock y Control ---
+    stock_actual = models.IntegerField(default=0)
     stock_minimo = models.IntegerField(default=0)
     stock_maximo = models.IntegerField(null=True, blank=True)
     punto_reorden = models.IntegerField(null=True, blank=True)
@@ -71,3 +73,31 @@ class DetalleRecepcion(models.Model):
 
     def __str__(self):
         return f"Detalle de Recepcion - Producto {self.producto.nombre}"
+
+class MovimientoInventario(models.Model):
+    TIPO_MOVIMIENTO_CHOICES = [
+        ('INGRESO', 'Ingreso'),
+        ('SALIDA', 'Salida'),
+        ('AJUSTE', 'Ajuste'),
+    ]
+
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='movimientos')
+    tipo_movimiento = models.CharField(max_length=10, choices=TIPO_MOVIMIENTO_CHOICES)
+    cantidad = models.IntegerField()
+    fecha_movimiento = models.DateTimeField(auto_now_add=True)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Campos adicionales del formulario
+    documento_referencia = models.CharField(max_length=100, blank=True, null=True)
+    observaciones = models.TextField(blank=True, null=True)
+    lote = models.CharField(max_length=50, blank=True, null=True)
+    serie = models.CharField(max_length=100, blank=True, null=True)
+    fecha_vencimiento = models.DateField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-fecha_movimiento']
+        verbose_name = "Movimiento de Inventario"
+        verbose_name_plural = "Movimientos de Inventario"
+
+    def __str__(self):
+        return f"{self.tipo_movimiento} de {self.cantidad} x {self.producto.sku} el {self.fecha_movimiento.strftime('%Y-%m-%d')}"

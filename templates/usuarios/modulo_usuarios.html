@@ -110,7 +110,7 @@
         <div class="card">
             <div class="card-header"> 
                 <h5>Usuarios</h5>
-                <button class="btn btn-success">Exportar a Excel</button>
+                <a href="{% url 'exportar_excel_usuarios' %}" class="btn btn-success" id="export-excel-btn">Exportar a Excel</a>
             </div>
 
             <!-- Controles de Filtro (sin formulario) -->
@@ -153,9 +153,13 @@
                         </tr>
                     </thead>
                     <tbody id="user-table-body">
-                        {% include '_user_list_partial.html' %}
+                        {% include "usuarios/_user_list_partial.html" %}
                     </tbody>
                 </table>
+            </div>
+            <!-- Contenedor para la paginación que se actualizará con AJAX -->
+            <div id="user-pagination-container">
+                {% include 'usuarios/_user_pagination.html' %}
             </div>
         </div>
     </div>
@@ -167,18 +171,27 @@
     const rolSelect = document.getElementById('rol_filtro_id');
     const estadoSelect = document.getElementById('estado_filtro_id');
     const userTableBody = document.getElementById('user-table-body');
+    const exportBtn = document.getElementById('export-excel-btn');
+    const paginationContainer = document.getElementById('user-pagination-container');
     const filterUrl = "{% url 'modulo_usuarios' %}"; // URL base para los filtros
 
     let debounceTimer;
-    function fetchFilteredUsers() {
+    function fetchFilteredUsers(url = null) {
         // Construir los parámetros de la URL
+        let fetchUrl = url;
         const params = new URLSearchParams({
             q: searchInput.value,
             rol_filtro: rolSelect.value,
             estado_filtro: estadoSelect.value
         });
+
+        if (!fetchUrl) {
+            fetchUrl = `${filterUrl}?${params.toString()}`;
+        }
+        // Actualizar el enlace de exportación
+        exportBtn.href = `{% url 'exportar_excel_usuarios' %}?${params.toString()}`;
         // Hacer la petición Fetch
-        fetch(`${filterUrl}?${params.toString()}`, {
+        fetch(fetchUrl, {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest', // Header para que Django sepa que es AJAX
@@ -189,6 +202,7 @@
         .then(data => {
             // Reemplazar el contenido de la tabla con el HTML recibido
             userTableBody.innerHTML = data.html_from_view;
+            attachPaginationListeners(); // Volver a asignar listeners a los nuevos enlaces
         })
         .catch(error => {
             console.error('Error al filtrar usuarios:', error);
@@ -206,5 +220,24 @@
     // Para los selects
     rolSelect.addEventListener('change', fetchFilteredUsers);
     estadoSelect.addEventListener('change', fetchFilteredUsers);
+
+    // --- Paginación AJAX ---
+    function attachPaginationListeners() {
+        document.querySelectorAll('#user-pagination-container .pagination a').forEach(link => {
+            if (link.dataset.hasListener !== 'true') {
+                link.dataset.hasListener = 'true';
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    fetchFilteredUsers(this.href);
+                });
+            }
+        });
+    }
+
+    // Ejecutar al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        attachPaginationListeners();
+    });
+
 </script>
 {% endblock %}

@@ -1,17 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .models import Proveedor  # ¡Importante! Asegúrate de tener este modelo
 import openpyxl  # Necesitarás instalar esto: pip install openpyxl
+from django.db.models import Q
+from django.template.loader import render_to_string
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # --- Vistas Principales del Módulo ---
 
 def modulo_proveedores(request):
     """
-    Muestra la lista de proveedores y el formulario de creación.
-    También maneja la búsqueda (filtro GET).
+    Muestra la lista de proveedores (filtrada y paginada) y el formulario.
+    Responde a peticiones normales y AJAX para filtros y paginación.
     """
-    query = request.GET.get('q')
+    query = request.GET.get('q', '')
     if query:
         # Búsqueda por RUT/NIF o Razón Social
         proveedores = Proveedor.objects.filter(
@@ -20,12 +23,38 @@ def modulo_proveedores(request):
     else:
         proveedores = Proveedor.objects.all().order_by('razon_social')
 
+    # --- Lógica de Paginación ---
+    paginator = Paginator(proveedores, 5) # 5 proveedores por página
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    params = request.GET.copy()
+    params.pop('page', None)
+    querystring = params.urlencode()
+
     context = {
         'titulo_pagina': 'Módulo de Proveedores',
-        'proveedores': proveedores,
-        # 'proveedor_a_editar' se usa para pre-llenar el formulario en modo edición
+        'proveedores': page_obj,
+        'page_obj': page_obj,
+        'querystring': querystring,
+        'query': query
     }
-    return render(request, 'proveedores/lista.html', context)
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        html = render_to_string(
+            template_name="proveedores/_provider_list_partial.html",
+            context=context
+        )
+        data_dict = {"html_from_view": html}
+        return JsonResponse(data=data_dict, safe=False)
+    else:
+        return render(request, 'proveedores/lista.html', context)
+
 
 def guardar_proveedor(request):
     """

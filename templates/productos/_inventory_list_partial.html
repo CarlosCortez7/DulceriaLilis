@@ -1,0 +1,60 @@
+{% for producto in productos %}
+<tr>
+    <td>{{ producto.sku }}</td>
+    <td>{{ producto.nombre }}</td>
+    <td class="text-center fw-bold">{{ producto.stock_actual|default:0 }}</td>
+    <td class="text-center">{{ producto.stock_minimo|default:0 }}</td>
+    <td class="text-center">{{ producto.punto_reorden|default:"N/A" }}</td>
+    <td class="text-center">
+        {% with stock=producto.stock_actual|default:0 min=producto.stock_minimo|default:0 reorden=producto.punto_reorden max=producto.stock_maximo %}
+            {% if stock <= 0 %}
+                <span class="badge badge-danger">Sin Stock</span>
+            {% elif reorden and stock <= reorden %}
+                <span class="badge badge-warning">Reordenar</span>
+            {% elif min > 0 and stock <= min %}
+                <span class="badge badge-warning">Stock Bajo</span>
+            {% elif max and stock > max %}
+                <span class="badge badge-info">Sobre-stock</span>
+            {% else %}
+                <span class="badge badge-success">OK</span>
+            {% endif %}
+        {% endwith %}
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="6" class="text-center text-muted py-4">No se encontraron productos que coincidan con la búsqueda.</td>
+</tr>
+{% endfor %}
+
+{% if page_obj.has_other_pages %}
+<tr>
+    <td colspan="6" class="bg-light">
+        <nav aria-label="Paginación de inventario" class="mt-2">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ querystring }}" aria-label="Anterior">&laquo;</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                {% endif %}
+        
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num == page_obj.number %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% else %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}&{{ querystring }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+        
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ querystring }}" aria-label="Siguiente">&raquo;</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </td>
+</tr>
+{% endif %}

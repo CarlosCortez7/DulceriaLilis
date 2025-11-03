@@ -1,13 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 # Importa Q para búsquedas OR y los modelos necesarios
-from django.db.models import Q
-from .models import Producto, Categoria, MEDIDA_CHOICES # <-- Añadido Categoria y MEDIDA_CHOICES
+from django.db.models import Q, Sum
+from .models import Producto, Categoria, MEDIDA_CHOICES, MovimientoInventario
 from django.contrib import messages
-from .forms import ProductoForm # Asumiendo que tienes un ProductoForm en forms.py
+from .forms import ProductoForm, MovimientoInventarioForm
 from django.contrib.auth.decorators import login_required 
 from django.template.loader import render_to_string
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator, EmptyPage,PageNotAnInteger
+import openpyxl
+from django.utils import timezone
+from datetime import timedelta
 
 # Create your views here.
 
@@ -122,7 +125,7 @@ def modulo_productos(request):
         'edit_mode': False
     }
     # --- Lógica de Paginación ---
-    paginator = Paginator(productos, 2)  
+    paginator = Paginator(productos, 5)  
     page_number = request.GET.get('page')
 
     try:
@@ -139,24 +142,82 @@ def modulo_productos(request):
 
     querystring=params.urlencode()
     
-    return render(request, 'productos/modulo_productos.html', {**context, 'productos': page_obj, 'page_obj': page_obj, 'querystring': querystring})
-
-
     # --- Respuesta Diferenciada (Normal vs AJAX) ---
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         # Si es AJAX (desde el filtro de búsqueda), renderiza SOLO la tabla parcial
         html = render_to_string(
-            template_name="productos/_product_list_partial.html", # Plantilla solo con el bucle y <tr>
-            context={'productos': productos, 'request': request} # Pasar request si se usa en el parcial (ej. para botones)
+            template_name="productos/_product_list_partial.html",
+            context={'productos': page_obj, 'page_obj': page_obj, 'querystring': querystring, 'request': request}
         )
         data_dict = {"html_from_view": html}
         return JsonResponse(data=data_dict, safe=False)
     else:
         # Si es una petición normal, renderiza la página completa
-        return render(request, 'modulo_productos.html', context)
+        return render(request, 'productos/modulo_productos.html', {**context, 'productos': page_obj, 'page_obj': page_obj, 'querystring': querystring})
 
+@login_required
 def modulo_inventario(request):
-    return render(request, 'productos/inventario.html') # Asume que tienes 'inventario.html'
+    if request.method == 'POST':
+        form = MovimientoInventarioForm(request.POST)
+        if form.is_valid():
+            sku = form.cleaned_data['sku_producto']
+            try:
+                producto = Producto.objects.get(sku=sku)
+                movimiento = form.save(commit=False)
+                movimiento.producto = producto
+                movimiento.usuario = request.user
+
+                # Actualizar stock del producto
+                cantidad = form.cleaned_data['cantidad']
+                if movimiento.tipo_movimiento == 'INGRESO':
+                    producto.stock_actual += cantidad
+                elif movimiento.tipo_movimiento == 'SALIDA':
+                    if producto.stock_actual < cantidad:
+                        messages.error(request, f"Stock insuficiente para {producto.nombre}. Stock actual: {producto.stock_actual}.")
+                        # No guardar y redirigir
+                        return redirect('modulo_inventario')
+                    producto.stock_actual -= cantidad
+                
+                producto.save()
+                movimiento.save()
+                messages.success(request, f"Movimiento de '{movimiento.tipo_movimiento}' para '{producto.nombre}' registrado correctamente.")
+
+            except Producto.DoesNotExist:
+                messages.error(request, f"El producto con SKU '{sku}' no existe.")
+        else:
+            messages.error(request, "Error al registrar el movimiento. Revisa los datos del formulario.")
+        return redirect('modulo_inventario')
+
+    # --- Lógica para GET (Carga de página) ---
+    form = MovimientoInventarioForm()
+    
+    # Datos para tarjetas de resumen
+    today = timezone.now().date()
+    movimientos_hoy = MovimientoInventario.objects.filter(fecha_movimiento__date=today).count()
+    stock_total = Producto.objects.aggregate(total=Sum('stock_actual'))['total'] or 0
+    productos_unicos = Producto.objects.count()
+
+    # Historial de movimientos con paginación
+    historial_movimientos = MovimientoInventario.objects.all().select_related('producto', 'usuario')
+    paginator = Paginator(historial_movimientos, 10) # 10 movimientos por página
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+    
+    context = {
+        'form': form,
+        'movimientos': page_obj,
+        'summary': {
+            'movimientos_hoy': movimientos_hoy,
+            'stock_total': stock_total,
+            'productos_unicos': productos_unicos,
+        }
+    }    
+    return render(request, 'productos/inventario.html', context)
 
 @login_required
 def eliminar_producto(request, product_id):
@@ -208,3 +269,52 @@ def editar_producto(request, product_id):
     }
     # Renderizar la MISMA plantilla
     return render(request, 'modulo_productos.html', context)
+
+@login_required
+def exportar_excel_productos(request):
+    """
+    Genera un archivo Excel con la lista de productos, aplicando los filtros actuales.
+    """
+    # 1. Replicar la lógica de filtrado de la vista principal
+    query = request.GET.get('q', '')
+    productos = Producto.objects.all().select_related('categoria')
+
+    if query:
+        productos = productos.filter(
+            Q(sku__icontains=query) | Q(nombre__icontains=query)
+        )
+    
+    productos = productos.order_by('nombre')
+
+    # 2. Crear el libro de Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Productos"
+
+    # Escribir encabezados
+    headers = [
+        "SKU", "Nombre", "Descripción", "Categoría", "Marca", 
+        "Precio Venta", "Costo Estándar", "Stock Mínimo", "Estado"
+    ]
+    ws.append(headers)
+
+    # Escribir datos de cada producto
+    for producto in productos:
+        ws.append([
+            producto.sku,
+            producto.nombre,
+            producto.descripcion,
+            producto.categoria.nombre if producto.categoria else "",
+            producto.marca,
+            producto.precio_venta,
+            producto.costo_estandar,
+            producto.stock_minimo,
+            producto.get_estado_display()
+        ])
+
+    # 3. Configurar la respuesta HTTP para descargar el archivo
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=lista_productos.xlsx'
+    wb.save(response)
+
+    return response
