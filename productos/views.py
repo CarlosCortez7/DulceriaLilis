@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q, Sum
 from .models import Producto, Categoria, MEDIDA_CHOICES, MovimientoInventario
 from django.contrib import messages
-from .forms import ProductoForm, MovimientoInventarioForm
+from .forms import ProductoForm, MovimientoInventarioForm, CategoriaForm
 from django.contrib.auth.decorators import login_required 
 from django.template.loader import render_to_string
 from django.http import JsonResponse, HttpResponse
@@ -12,32 +12,54 @@ import openpyxl
 from django.utils import timezone
 from datetime import timedelta
 
+
 # Create your views here.
 
 def home(request):
+    # Contador de visitas
     visitas = request.session.get('visitas', 0)
     request.session['visitas'] = visitas + 1
+
+    # Productos activos
     productos = Producto.objects.filter(estado='activo').order_by('nombre')
 
+    # Manejo del formulario de nuevo producto
     if request.method == "POST":
-        form = ProductoForm(request.POST, request.FILES or None) # Añadir FILES para imágenes
+        form = ProductoForm(request.POST, request.FILES or None)
         if form.is_valid():
             form.save()
             messages.success(request, 'Producto agregado correctamente.')
             return redirect('home')
         else:
-             messages.error(request, 'Error al agregar el producto. Revisa el formulario.')
+            messages.error(request, 'Error al agregar el producto. Revisa el formulario.')
     else:
         form = ProductoForm()
 
+    # =====================
+    # 🔹 PAGINADOR DINÁMICO
+    # =====================
+    page_size = request.GET.get('page_size')  # Número de productos por página
+    if page_size:
+        request.session['page_size'] = int(page_size)  # Guardamos en sesión
+    else:
+        page_size = request.session.get('page_size', 12)  # Valor por defecto: 12
+
+    paginator = Paginator(productos, page_size)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Contexto para la plantilla
     categorias = Categoria.objects.all()
     context = {
-        'productos': productos,
+        'productos': page_obj,             # Paginados
+        'page_obj': page_obj,              # Objeto de paginación
+        'page_size': int(page_size),       # Tamaño actual de página
         'form': form,
         'visitas': visitas,
         'categorias': categorias,
-        'MEDIDA_CHOICES': MEDIDA_CHOICES
+        'MEDIDA_CHOICES': MEDIDA_CHOICES,
     }
+
     return render(request, 'productos/home.html', context)
 
 def agregar_producto(request):
@@ -318,3 +340,76 @@ def exportar_excel_productos(request):
     wb.save(response)
 
     return response
+
+# crud de categorias
+@login_required
+def listar_categorias(request):
+    # === Guardar cantidad seleccionada en sesión ===
+    if 'page_size' in request.GET:
+        request.session['page_size'] = int(request.GET.get('page_size'))
+    page_size = request.session.get('page_size', 5)
+
+    # === Ordenar (asc / desc) ===
+    sort_by = request.GET.get('sort', 'id')
+    order = request.GET.get('order', 'asc')
+    sort_field = sort_by
+    if order == 'desc':
+        sort_by = f'-{sort_by}'
+
+    # === Filtro por búsqueda (si se usa el buscador) ===
+    query = request.GET.get('q', '')
+    categorias = Categoria.objects.all()
+    if query:
+        categorias = categorias.filter(nombre__icontains=query)
+
+    # === Ordenar queryset ===
+    categorias = categorias.order_by(sort_by)
+
+    # === Paginación ===
+    paginator = Paginator(categorias, page_size)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # === Contexto al template ===
+    context = {
+        'categorias': page_obj.object_list,
+        'page_obj': page_obj,
+        'query': query,
+        'page_size': page_size,
+        'sort_field': sort_field,
+        'sort_order': order,
+    }
+
+    return render(request, 'productos/categorias/listar.html', context)
+@login_required
+def crear_categoria(request):
+    if request.method == 'POST':
+        form = CategoriaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Categoría creada correctamente.')
+            return redirect('listar_categorias')
+    else:
+        form = CategoriaForm()
+    return render(request, 'productos/categorias/form.html', {'form': form, 'accion': 'Crear'})
+
+
+@login_required
+def editar_categoria(request, id):
+    categoria = get_object_or_404(Categoria, id=id)
+    if request.method == 'POST':
+        form = CategoriaForm(request.POST, instance=categoria)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Categoría editada correctamente.')
+            return redirect('listar_categorias')
+    else:
+        form = CategoriaForm(instance=categoria)
+    return render(request, 'productos/categorias/form.html', {'form': form, 'accion': 'Editar'})
+
+@login_required
+def eliminar_categoria(request, id):
+    categoria = get_object_or_404(Categoria, id=id)
+    categoria.delete()
+    messages.success(request, 'Categoría eliminada correctamente.')
+    return redirect('listar_categorias')

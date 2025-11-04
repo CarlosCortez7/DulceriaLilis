@@ -2,292 +2,218 @@
 {% load static %}
 
 {% block content %}
-
 <style>
-    .hero-section {
-        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-        color: white;
-        padding: 80px 0;
-        margin-bottom: 60px;
-        border-radius: 20px;
-        position: relative;
-        overflow: hidden;
-    }
-    .hero-section::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
-        opacity: 0.3;
-    }
-    .hero-content {
-        position: relative;
-        z-index: 1;
-    }
-    .hero-title {
-        font-size: 3.5rem;
-        font-weight: 800;
-        margin-bottom: 20px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    .hero-subtitle {
-        font-size: 1.3rem;
-        opacity: 0.95;
-        margin-bottom: 30px;
-    }
-    .stats-container {
-        display: flex;
-        gap: 30px;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin-top: 40px;
-    }
-    .stat-card {
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        padding: 25px 35px;
-        border-radius: 15px;
-        text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #fbbf24;
-    }
-    .stat-label {
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 5px;
-    }
-    .section-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 15px;
-        position: relative;
-        display: inline-block;
-    }
-    .section-title::after {
-        content: '';
-        position: absolute;
-        bottom: -10px;
-        left: 0;
-        width: 60px;
-        height: 4px;
-        background: linear-gradient(90deg, #dc2626, #fbbf24);
-        border-radius: 2px;
-    }
-    .section-subtitle {
-        color: #64748b;
-        font-size: 1.1rem;
-        margin-bottom: 50px;
-    }
-    .product-card {
-        border: none;
-        border-radius: 16px;
-        overflow: hidden;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        height: 100%;
-    }
-    .product-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-    }
-    .product-image-container {
-    overflow: hidden;
+  .hero-section {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+    padding: 80px 0;
+    margin-bottom: 60px;
+    border-radius: 20px;
     position: relative;
-    background: #f8fafc;
-    padding: 1rem;
-    }
-    .product-image {
-    width: 100%;
-    height: 220px;
-    object-fit: contain;
-    transition: transform 0.3s ease;
-    }
-    .product-card:hover .product-image {
-        transform: scale(1.05);
-    }
-    .product-image-container {
-        overflow: hidden;
-        position: relative;
-        background: #f8fafc;
-    }
-    .stock-badge {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: rgba(255, 255, 255, 0.95);
-        padding: 8px 15px;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-    .stock-high { color: #16a34a; }
-    .stock-medium { color: #f59e0b; }
-    .stock-low { color: #dc2626; }
-    .product-body { padding: 25px; }
-    .product-title {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 12px;
-    }
-    .product-description {
-        color: #64748b;
-        font-size: 0.95rem;
-        line-height: 1.6;
-        margin-bottom: 20px;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    .product-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 15px;
-        border-top: 1px solid #e2e8f0;
-    }
-    .stock-info {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: #475569;
-        font-size: 0.9rem;
-    }
-    .stock-icon {
-        width: 20px;
-        height: 20px;
-        fill: currentColor;
-    }
-    .empty-state {
-        text-align: center;
-        padding: 80px 20px;
-        color: #64748b;
-    }
-    .empty-icon {
-        width: 120px;
-        height: 120px;
-        margin: 0 auto 30px;
-        opacity: 0.3;
-    }
-    .empty-title {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: #475569;
-        margin-bottom: 15px;
-    }
-    .empty-text { font-size: 1.1rem; }
-    @media (max-width: 768px) {
-        .hero-title { font-size: 2.5rem; }
-        .hero-subtitle { font-size: 1.1rem; }
-        .section-title { font-size: 2rem; }
-        .stats-container { gap: 15px; }
-        .stat-card { padding: 20px 25px; }
-    }
+    overflow: hidden;
+  }
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
+    opacity: 0.3;
+  }
+  .hero-content { position: relative; z-index: 1; }
+  .hero-title { font-size: 3.5rem; font-weight: 800; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+  .hero-subtitle { font-size: 1.3rem; opacity: 0.95; margin-bottom: 30px; }
+
+  .stats-container { display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; margin-top: 40px; }
+  .stat-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    padding: 25px 35px;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  .stat-number { font-size: 2.5rem; font-weight: 700; color: #fbbf24; }
+  .stat-label { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+
+  .section-title { font-size: 2.5rem; font-weight: 700; color: #1e293b; margin-bottom: 15px; position: relative; display: inline-block; }
+  .section-title::after {
+    content: ''; position: absolute; bottom: -10px; left: 0;
+    width: 60px; height: 4px;
+    background: linear-gradient(90deg, #dc2626, #fbbf24);
+    border-radius: 2px;
+  }
+  .section-subtitle { color: #64748b; font-size: 1.1rem; margin-bottom: 50px; }
+
+  .product-card {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    height: 100%;
+  }
+  .product-card:hover { transform: translateY(-8px); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15); }
+
+  .product-image-container { overflow: hidden; position: relative; background: #f8fafc; padding: 1rem; }
+  .product-image { width: 100%; height: 220px; object-fit: contain; transition: transform 0.3s ease; }
+  .product-card:hover .product-image { transform: scale(1.05); }
+
+  .stock-badge {
+    position: absolute; top: 15px; right: 15px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px 15px; border-radius: 20px;
+    font-weight: 600; font-size: 0.85rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  .stock-high { color: #16a34a; }
+  .stock-medium { color: #f59e0b; }
+  .stock-low { color: #dc2626; }
+
+  .product-body { padding: 25px; }
+  .product-title { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 12px; }
+  .product-description { color: #64748b; font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .product-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid #e2e8f0; }
+
+  .pagination .page-link { color: #dc2626; border: none; }
+  .pagination .page-item.active .page-link { background-color: #dc2626; border-color: #dc2626; color: white; }
+  .pagination .page-link:hover { color: #991b1b; }
 </style>
 
 <main class="container py-4">
-    
-    <p class="text-muted text-end small">Has visitado esta página {{ visitas }} veces durante esta sesión.</p>
+  <p class="text-muted text-end small">Has visitado esta página {{ visitas }} veces durante esta sesión.</p>
 
-    <section class="hero-section">
-        <div class="hero-content text-center">
-            <h1 class="hero-title">Bienvenido a Dulcería Lilis</h1>
-            <p class="hero-subtitle">Los mejores dulces y golosinas para endulzar tu día</p>
-            
-            <div class="stats-container">
-                <div class="stat-card">
-                    <div class="stat-number">{{ productos|length }}</div>
-                    <div class="stat-label">Productos</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">100%</div>
-                    <div class="stat-label">Calidad</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">24/7</div>
-                    <div class="stat-label">Disponible</div>
-                </div>
-            </div>
+  <!-- === HERO === -->
+  <section class="hero-section">
+    <div class="hero-content text-center">
+      <h1 class="hero-title">Bienvenido a Dulcería Lilis</h1>
+      <p class="hero-subtitle">Los mejores dulces y golosinas para endulzar tu día</p>
+
+      <div class="stats-container">
+        <div class="stat-card">
+          <div class="stat-number">{{ page_obj.paginator.count }}</div>
+          <div class="stat-label">Productos</div>
         </div>
-    </section>
-
-    <section class="mt-5">
-        <div class="text-center mb-5">
-            <h2 class="section-title">Nuestros Productos</h2>
-            <p class="section-subtitle">Descubre nuestra deliciosa selección de dulces y golosinas</p>
+        <div class="stat-card">
+          <div class="stat-number">100%</div>
+          <div class="stat-label">Calidad</div>
         </div>
+        <div class="stat-card">
+          <div class="stat-number">24/7</div>
+          <div class="stat-label">Disponible</div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        {% if productos %}
-            <div class="row g-4">
-                {% for producto in productos %}
-                    <div class="col-lg-4 col-md-6">
-                        <div class="product-card">
-                            <div class="product-image-container">
-                                
-                                {% if producto.imagen %}
-                                    <img src="{{ producto.imagen.url }}" class="product-image" alt="{{ producto.nombre }}">
-                                {% else %}
-                                    <img src="{% static 'images/default_product.png' %}" class="product-image" alt="Imagen no disponible">
-                                {% endif %}
-                                
-                                {% if producto.stock_minimo > 50 %}
-                                    <span class="stock-badge stock-high">✓ Disponible</span>
-                                {% elif producto.stock_minimo > 20 %}
-                                    <span class="stock-badge stock-medium">⚠ Stock medio</span>
-                                {% else %}
-                                    <span class="stock-badge stock-low">! Pocas unidades</span>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="product-body">
-                                <h5 class="product-title">{{ producto.nombre }}</h5>
-                                <p class="product-description">
-                                    {% if producto.descripcion %}
-                                        {{ producto.descripcion }}
-                                    {% else %}
-                                        Delicioso producto de la más alta calidad.
-                                    {% endif %}
-                                </p>
-                                
-                                <div class="product-footer">
-                                    <div class="stock-info">
-                                        <svg class="stock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M3.375 3C2.339 3 1.5 3.84 1.5 4.875v.75c0 1.036.84 1.875 1.875 1.875h17.25c1.035 0 1.875-.84 1.875-1.875v-.75C22.5 3.839 21.66 3 20.625 3H3.375z"/>
-                                            <path fill-rule="evenodd" d="m3.087 9 .54 9.176A3 3 0 0 0 6.62 21h10.757a3 3 0 0 0 2.995-2.824L20.913 9H3.087zm6.163 3.75A.75.75 0 0 1 10 12h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1-.75-.75z" clip-rule="evenodd"/>
-                                        </svg>
+  <!-- === PRODUCTOS === -->
+  <section class="mt-5">
+    <div class="text-center mb-5">
+      <h2 class="section-title">Nuestros Productos</h2>
+      <p class="section-subtitle">Descubre nuestra deliciosa selección de dulces y golosinas</p>
+    </div>
 
-                                        <strong>{{ producto.stock_minimo }}</strong> (Stock Mínimo)
-                                    </div>
+    {% if page_obj %}
+      <div class="row g-4">
+        {% for producto in page_obj %}
+          <div class="col-lg-4 col-md-6">
+            <div class="product-card">
+              <div class="product-image-container">
+                {% if producto.imagen %}
+                  <img src="{{ producto.imagen.url }}" class="product-image" alt="{{ producto.nombre }}">
+                {% else %}
+                  <img src="{% static 'images/default_product.png' %}" class="product-image" alt="Imagen no disponible">
+                {% endif %}
 
-                                    <a href="{% url 'add_to_cart' producto.id %}" class="btn btn-danger btn-sm">Añadir al carrito</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
+                {% if producto.stock_minimo > 50 %}
+                  <span class="stock-badge stock-high">✓ Disponible</span>
+                {% elif producto.stock_minimo > 20 %}
+                  <span class="stock-badge stock-medium">⚠ Stock medio</span>
+                {% else %}
+                  <span class="stock-badge stock-low">! Pocas unidades</span>
+                {% endif %}
+              </div>
+
+              <div class="product-body">
+                <h5 class="product-title">{{ producto.nombre }}</h5>
+                <p class="product-description">{{ producto.descripcion|default:"Delicioso producto de la más alta calidad." }}</p>
+
+                <div class="product-footer">
+                  <div class="stock-info">
+                    <svg class="stock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3.375 3C2.339 3 1.5 3.84 1.5 4.875v.75c0 1.036.84 1.875 1.875 1.875h17.25c1.035 0 1.875-.84 1.875-1.875v-.75C22.5 3.839 21.66 3 20.625 3H3.375z"/>
+                      <path fill-rule="evenodd" d="m3.087 9 .54 9.176A3 3 0 0 0 6.62 21h10.757a3 3 0 0 0 2.995-2.824L20.913 9H3.087zm6.163 3.75A.75.75 0 0 1 10 12h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1-.75-.75z" clip-rule="evenodd"/>
+                    </svg>
+                    <strong>{{ producto.stock_minimo }}</strong> (Stock Mínimo)
+                  </div>
+                  <a href="{% url 'add_to_cart' producto.id %}" class="btn btn-danger btn-sm">Añadir al carrito</a>
+                </div>
+              </div>
             </div>
-        {% else %}
-            <div class="empty-state">
-                <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                </svg>
-                <h3 class="empty-title">No hay productos disponibles</h3>
-                <p class="empty-text">Estamos trabajando para traerte los mejores dulces pronto.</p>
-            </div>
-        {% endif %}
-    </section>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- === PAGINADOR === -->
+      {% if page_obj.has_other_pages %}
+      <nav aria-label="Paginador de productos" class="mt-5">
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">«</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">«</span></li>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+              <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% else %}
+              <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">»</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">»</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+
+      <!-- === SELECTOR DE REGISTROS === -->
+      <div class="text-center mt-3">
+        <label for="page-size-select" class="form-label me-2">Mostrar:</label>
+        <select id="page-size-select" class="form-select form-select-sm d-inline-block" style="width:auto;">
+          <option value="6" {% if page_size == 6 %}selected{% endif %}>6 productos</option>
+          <option value="12" {% if page_size == 12 %}selected{% endif %}>12 productos</option>
+          <option value="24" {% if page_size == 24 %}selected{% endif %}>24 productos</option>
+        </select>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
+        <h3 class="empty-title">No hay productos disponibles</h3>
+        <p class="empty-text">Estamos trabajando para traerte los mejores dulces pronto.</p>
+      </div>
+    {% endif %}
+  </section>
 </main>
 
+<script>
+  const pageSizeSelect = document.getElementById('page-size-select');
+  if (pageSizeSelect) {
+    pageSizeSelect.addEventListener('change', function() {
+      const pageSize = this.value;
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('page_size', pageSize);
+      currentUrl.searchParams.delete('page'); // reinicia la página
+      window.location.href = currentUrl.toString();
+    });
+  }
+</script>
 {% endblock %}

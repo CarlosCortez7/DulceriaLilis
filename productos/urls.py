@@ -20,4 +20,11 @@ urlpatterns = [
 
     #inventario
     path('inventario/', modulo_inventario, name='modulo_inventario'),
+
+    # Categorias
+    path('categorias/', views.listar_categorias, name='listar_categorias'),
+    path('categorias/nueva/', views.crear_categoria, name='crear_categoria'),
+    path('categorias/editar/<int:id>/', views.editar_categoria, name='editar_categoria'),
+    path('categorias/eliminar/<int:id>/', views.eliminar_categoria, name='eliminar_categoria'),
+
 ]
