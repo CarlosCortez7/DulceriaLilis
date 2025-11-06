@@ -126,58 +126,49 @@ def cart_detail(request):
 
 # --- VISTA CORREGIDA ---
 def modulo_productos(request):
-    """ Muestra la lista de productos (filtrada) y formulario. Responde a peticiones normales y AJAX para filtros dinámicos. """
-    query = request.GET.get('q', '')
     productos = Producto.objects.all().select_related('categoria')
 
-    if query:
-        productos = productos.filter(
-            Q(sku__icontains=query) | Q(nombre__icontains=query)
-        )
+    nombre = request.GET.get('nombre', '').strip()
+    productos = productos.filter(categoria_id=categoria_id)
+    precio_min = request.GET.get('precio', '').strip()
+
+    if nombre:
+        productos = productos.filter(nombre__icontains=nombre)
+    if categoria_id:
+        productos = productos.filter(categoria_id=categoria_id)
+    if precio_min:
+        productos = productos.filter(precio_venta__icontains=str(precio_min))
+
     productos = productos.order_by('nombre')
 
-    form = ProductoForm()
-    categorias = Categoria.objects.all()
-
-    # --- Contexto Base ---
-    context = {
-        'productos': productos,
-        'categorias': categorias,
-        'MEDIDA_CHOICES': MEDIDA_CHOICES,
-        'form': form,
-        'query': query,
-        'edit_mode': False
-    }
-    # --- Lógica de Paginación ---
-    paginator = Paginator(productos, 5)  
+    paginator = Paginator(productos, 5)
     page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
-    try:
-        page_obj = paginator.page(page_number)
-    except PageNotAnInteger:
-    # Si page_number no es un número, muestra la primera página
-        page_obj = paginator.page(1)
-    except EmptyPage:
-    # Si la página está fuera de rango, muestra la última
-        page_obj = paginator.page(paginator.num_pages)
-    
-    params=request.GET.copy()
-    params.pop('page',None)
+    params = request.GET.copy()
+    params.pop('page', None)
+    querystring = params.urlencode()
 
-    querystring=params.urlencode()
-    
-    # --- Respuesta Diferenciada (Normal vs AJAX) ---
+    categorias = Categoria.objects.all()
+    form = ProductoForm()
+
+    context = {
+        'productos': page_obj,
+        'categorias': categorias,
+        'form': form,
+        'page_obj': page_obj,
+        'querystring': querystring,
+        'nombre': nombre,
+        'categoria_id': categoria_id,
+        'precio_min': precio_min,
+    }
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # Si es AJAX (desde el filtro de búsqueda), renderiza SOLO la tabla parcial
-        html = render_to_string(
-            template_name="productos/_product_list_partial.html",
-            context={'productos': page_obj, 'page_obj': page_obj, 'querystring': querystring, 'request': request}
-        )
-        data_dict = {"html_from_view": html}
-        return JsonResponse(data=data_dict, safe=False)
+        html = render_to_string('productos/_product_list_partial.html', context, request=request)
+        return JsonResponse({'html_from_view': html})
     else:
-        # Si es una petición normal, renderiza la página completa
-        return render(request, 'productos/modulo_productos.html', {**context, 'productos': page_obj, 'page_obj': page_obj, 'querystring': querystring})
+        return render(request, 'productos/modulo_productos.html', context)
+
 
 @login_required
 def modulo_inventario(request):
@@ -344,7 +335,7 @@ def editar_producto(request, product_id):
         'productos': todos_los_productos # Pasar la lista para la tabla de abajo
     }
     # Renderizar la MISMA plantilla
-    return render(request, 'modulo_productos.html', context)
+    return render(request, 'productos/modulo_productos.html', context)
 
 @login_required
 def exportar_excel_productos(request):
