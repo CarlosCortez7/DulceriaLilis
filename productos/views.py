@@ -124,12 +124,11 @@ def cart_detail(request):
 
     return render(request, 'productos/cart_detail.html', {'cart_items': cart_items, 'total_general': total_general})
 
-# --- VISTA CORREGIDA ---
 def modulo_productos(request):
     productos = Producto.objects.all().select_related('categoria')
 
     nombre = request.GET.get('nombre', '').strip()
-    productos = productos.filter(categoria_id=categoria_id)
+    categoria_id = request.GET.get('categoria_id')
     precio_min = request.GET.get('precio', '').strip()
 
     if nombre:
@@ -137,17 +136,16 @@ def modulo_productos(request):
     if categoria_id:
         productos = productos.filter(categoria_id=categoria_id)
     if precio_min:
-        productos = productos.filter(precio_venta__icontains=str(precio_min))
+        try:
+            productos = productos.filter(precio_venta__gte=float(precio_min))
+        except ValueError:
+            pass
 
     productos = productos.order_by('nombre')
 
     paginator = Paginator(productos, 5)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
-    params = request.GET.copy()
-    params.pop('page', None)
-    querystring = params.urlencode()
 
     categorias = Categoria.objects.all()
     form = ProductoForm()
@@ -157,7 +155,6 @@ def modulo_productos(request):
         'categorias': categorias,
         'form': form,
         'page_obj': page_obj,
-        'querystring': querystring,
         'nombre': nombre,
         'categoria_id': categoria_id,
         'precio_min': precio_min,
@@ -166,8 +163,9 @@ def modulo_productos(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         html = render_to_string('productos/_product_list_partial.html', context, request=request)
         return JsonResponse({'html_from_view': html})
-    else:
-        return render(request, 'productos/modulo_productos.html', context)
+
+    return render(request, 'productos/modulo_productos.html', context)
+
 
 
 @login_required

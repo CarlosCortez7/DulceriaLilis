@@ -195,11 +195,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // === FILTRO AJAX ===
-    function fetchFilteredProducts() {
+    function fetchFilteredProducts(page=1) {
         const params = new URLSearchParams({
             nombre: nombreInput.value,
             categoria: categoriaInput.value,
-            precio: precioInput.value
+            precio: precioInput.value,
+            page: page
         });
         const fetchUrl = `${productFilterUrl}?${params.toString()}`;
         productExportBtn.href = `{% url 'exportar_excel_productos' %}?${params.toString()}`;
@@ -216,12 +217,21 @@ document.addEventListener('DOMContentLoaded', function() {
         .finally(() => { productTableBody.style.opacity = '1'; });
     }
 
-    // === EVENTOS DE FILTRO ===
+    // --- EVENTOS FILTRO ---
     [nombreInput, categoriaInput, precioInput].forEach(input => {
         input.addEventListener('input', () => {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(fetchFilteredProducts, 300);
+            debounceTimer = setTimeout(() => fetchFilteredProducts(), 300);
         });
+    });
+
+    // --- PAGINACIÓN AJAX ---
+    document.addEventListener('click', function(e) {
+        if(e.target.matches('.page-link[data-page]')) {
+            e.preventDefault();
+            const page = e.target.dataset.page;
+            fetchFilteredProducts(page);
+        }
     });
 
     attachActionListeners();
