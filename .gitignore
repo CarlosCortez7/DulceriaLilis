@@ -72,8 +72,8 @@ staticfiles/
 
 # --- Django Media Files ---
 # Ignore the directory where user-uploaded files are stored.
-media/
-
+media/avatars/
+media/productos/
 # --- Test / Coverage Reports ---
 .coverage
 .coverage.*
