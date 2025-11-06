@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib import messages
-from django.db import IntegrityError
+from django.db import IntegrityError, models
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from .form import CustomLoginForm, UsuarioCreationForm, UsuarioChangeForm
+from django.contrib.auth.models import User
+from .form import CustomLoginForm, UsuarioCreationForm, UsuarioChangeForm, UsuarioPerfilForm, CustomPasswordChangeForm, AvatarForm
 from .models import Usuario, ROL_CHOICES # Importar ROL_CHOICES si está definido en models.py
 # Importar Q para búsquedas OR
 from django.db.models import Q
@@ -280,3 +281,50 @@ def exportar_excel_usuarios(request):
     wb.save(response)
 
     return response
+
+@login_required
+def perfil_usuario(request):
+    user = request.user
+
+    if request.method == 'POST':
+        if 'actualizar_imagen' in request.POST:  # <- nombre del botón del form de imagen
+            avatar_form = AvatarForm(request.POST, request.FILES, instance=user)
+            perfil_form = UsuarioPerfilForm(instance=user)
+            password_form = CustomPasswordChangeForm(user)
+            if avatar_form.is_valid():
+                avatar_form.save()
+                messages.success(request, "Imagen de perfil actualizada correctamente.")
+                return redirect('perfil_usuario')
+            else:
+                messages.error(request, "No se pudo actualizar la imagen.")
+        elif 'actualizar_datos' in request.POST:
+            perfil_form = UsuarioPerfilForm(request.POST, instance=user)
+            avatar_form = AvatarForm(instance=user)
+            password_form = CustomPasswordChangeForm(user)
+            if perfil_form.is_valid():
+                perfil_form.save()
+                messages.success(request, "Datos personales actualizados.")
+                return redirect('perfil_usuario')
+            else:
+                messages.error(request, "Corrige los errores del formulario.")
+        elif 'cambiar_password' in request.POST:
+            password_form = CustomPasswordChangeForm(user, request.POST)
+            perfil_form = UsuarioPerfilForm(instance=user)
+            avatar_form = AvatarForm(instance=user)
+            if password_form.is_valid():
+                password_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, "Contraseña actualizada.")
+                return redirect('perfil_usuario')
+            else:
+                messages.error(request, "Revisa los campos de contraseña.")
+    else:
+        perfil_form = UsuarioPerfilForm(instance=user)
+        avatar_form = AvatarForm(instance=user)
+        password_form = CustomPasswordChangeForm(user)
+
+    return render(request, 'usuarios/perfil.html', {
+        'perfil_form': perfil_form,
+        'avatar_form': avatar_form,
+        'password_form': password_form,
+    })

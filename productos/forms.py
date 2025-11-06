@@ -1,5 +1,5 @@
 from django import forms
-from .models import Producto, MovimientoInventario
+from .models import Producto, MovimientoInventario , Categoria
 
 class ProductoForm(forms.ModelForm):
     class Meta:
@@ -61,3 +61,8 @@ class MovimientoInventarioForm(forms.ModelForm):
             'serie': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SN123456789'}),
             'fecha_vencimiento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
+
+class CategoriaForm(forms.ModelForm):
+    class Meta:
+        model = Categoria
+        fields = ['nombre']

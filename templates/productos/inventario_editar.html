@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card shadow-sm p-4">
+        <h3 class="mb-4 text-center">
+            <i class="bi bi-pencil-square text-primary"></i> Editar Movimiento
+        </h3>
+
+        <form method="POST" action="{% url 'editar_movimiento' movimiento.id %}">
+            {% csrf_token %}
+
+            <!-- === DATOS PRINCIPALES === -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.tipo_movimiento.label }}</label>
+                    {{ form.tipo_movimiento }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.sku_producto.label }}</label>
+                    {{ form.sku_producto }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.cantidad.label }}</label>
+                    {{ form.cantidad }}
+                </div>
+            </div>
+
+            <!-- === TRAZABILIDAD === -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.lote.label }}</label>
+                    {{ form.lote }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.serie.label }}</label>
+                    {{ form.serie }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ form.fecha_vencimiento.label }}</label>
+                    {{ form.fecha_vencimiento }}
+                </div>
+            </div>
+
+            <!-- === REFERENCIAS === -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.documento_referencia.label }}</label>
+                    {{ form.documento_referencia }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.observaciones.label }}</label>
+                    {{ form.observaciones }}
+                </div>
+            </div>
+
+            <!-- === BOTONES === -->
+            <div class="d-flex justify-content-end mt-4">
+                <a href="{% url 'modulo_inventario' %}" class="btn btn-secondary me-2">
+                    <i class="bi bi-arrow-left"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- === LIBRERÍAS NECESARIAS === -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // === Autocompletado SKU ===
+    const skuField = $('#id_sku_producto');
+    if (skuField.length) {
+        skuField.autocomplete({
+            source: "{% url 'autocomplete_sku' %}",
+            minLength: 1,
+            delay: 200,
+            select: function(event, ui) {
+                skuField.val(ui.item.value);
+                return false;
+            }
+        });
+    }
+
+    // === SweetAlert para mensajes Django ===
+    {% if messages %}
+        {% for message in messages %}
+            Swal.fire({
+                icon: "{% if 'error' in message.tags %}error{% elif 'success' in message.tags %}success{% else %}info{% endif %}",
+                title: "{{ message|escapejs }}",
+                showConfirmButton: false,
+                timer: 2200,
+                timerProgressBar: true,
+                background: "#fff",
+                color: "#333",
+                confirmButtonColor: "#0d6efd"
+            });
+        {% endfor %}
+    {% endif %}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow-sm border-0">
+    <div class="card-header d-flex justify-content-between align-items-center bg-white">
+      <h5 class="mb-0 fw-bold">Categorías</h5>
+      <a href="{% url 'crear_categoria' %}" class="btn btn-success">Nueva Categoría</a>
+    </div>
+
+    <!-- 🔍 Buscador -->
+    <div class="row p-3">
+      <div class="col-md-6">
+        <input type="text" class="form-control" id="category-search-input" placeholder="Buscar categoría por nombre...">
+      </div>
+    </div>
+
+    <!-- 📋 Tabla -->
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th style="width: 10%;">
+              <a href="?sort=id&order={% if sort_field == 'id' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+                 class="text-white text-decoration-none">
+                 ID {% if sort_field == 'id' %}
+                  {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                 {% endif %}
+              </a>
+            </th>
+            <th>
+              <a href="?sort=nombre&order={% if sort_field == 'nombre' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+                 class="text-white text-decoration-none">
+                 Nombre {% if sort_field == 'nombre' %}
+                  {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                 {% endif %}
+              </a>
+            </th>
+            <th class="text-center" style="width: 20%;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="category-table-body">
+          {% include 'productos/categorias/_category_list_partial.html' %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ⚙️ Footer con selector + paginador -->
+    <div class="card-footer d-flex align-items-center justify-content-between bg-white flex-wrap">
+      <div class="d-flex align-items-center mb-2 mb-md-0">
+        <label for="page-size-select" class="form-label mb-0 me-2">Mostrar:</label>
+        <select id="page-size-select" class="form-select form-select-sm" style="width: auto;">
+          <option value="5" {% if page_size == 5 %}selected{% endif %}>5 registros</option>
+          <option value="15" {% if page_size == 15 %}selected{% endif %}>15 registros</option>
+          <option value="30" {% if page_size == 30 %}selected{% endif %}>30 registros</option>
+        </select>
+      </div>
+
+      {% if page_obj.has_other_pages %}
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">«</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">«</span></li>
+          {% endif %}
+          
+          {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+              <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% else %}
+              <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">»</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">»</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  // === SELECT DEL PAGINADOR ===
+  const pageSizeSelect = document.getElementById('page-size-select');
+  if (pageSizeSelect) {
+    pageSizeSelect.value = "{{ page_size }}";
+    pageSizeSelect.addEventListener('change', function() {
+      const pageSize = this.value;
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('page_size', pageSize);
+      currentUrl.searchParams.delete('page'); // Reinicia la paginación
+      window.location.href = currentUrl.toString();
+    });
+  }
+
+  // === SWEETALERT2: Confirmar eliminación ===
+  function confirmarEliminacion(id, nombre) {
+    Swal.fire({
+      title: '¿Eliminar categoría?',
+      text: `Se eliminará "${nombre}" permanentemente.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = `/productos/categorias/eliminar/${id}/`;
+      }
+    });
+  }
+</script>
+
+{% if messages %}
+<script>
+  {% for message in messages %}
+  Swal.fire({
+    title: 'Éxito',
+    text: '{{ message|escapejs }}',
+    icon: 'success',
+    confirmButtonColor: '#dc3545'
+  });
+  {% endfor %}
+</script>
+{% endif %}
+{% endblock %}
+
