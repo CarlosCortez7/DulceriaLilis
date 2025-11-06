@@ -56,7 +56,7 @@ def iniciar_sesion(request):
             messages.success(request, f'Bienvenido de nuevo, {user.username}.')
             return redirect('home')
         else:
-            return render(request, 'iniciar_sesion.html', {
+            return render(request, 'usuarios/iniciar_sesion.html', {
                 'form': form,
             })
 
@@ -76,6 +76,8 @@ def modulo_usuarios(request):
     query = request.GET.get('q', '')
     rol_filtro = request.GET.get('rol_filtro', '')
     estado_filtro = request.GET.get('estado_filtro', '')
+    sort_by = request.GET.get('sort_by', '') # Nuevo: obtener parámetro de ordenamiento
+    per_page = int(request.GET.get('per_page', 5)) # Nuevo: obtener registros por página, default 5
     usuarios = Usuario.objects.all()
 
     # Aplicar filtro de búsqueda
@@ -94,7 +96,23 @@ def modulo_usuarios(request):
         usuarios = usuarios.filter(is_active=True)
     elif estado_filtro == 'inactivo':
         usuarios = usuarios.filter(is_active=False)
-    usuarios = usuarios.order_by('username')
+    
+    # --- Lógica de Ordenamiento ---
+    sort_mapping = {
+        'username_asc': 'username',
+        'username_desc': '-username',
+        'email_asc': 'email',
+        'email_desc': '-email',
+        'rol_asc': 'rol',
+        'rol_desc': '-rol',
+        'is_active_desc': '-is_active', # Activos primero
+        'is_active_asc': 'is_active',   # Inactivos primero
+        'date_joined_desc': '-date_joined', # Más reciente primero
+        'date_joined_asc': 'date_joined',   # Más antiguo primero
+    }
+    
+    order_field = sort_mapping.get(sort_by, 'username') # Por defecto, ordenar por username
+    usuarios = usuarios.order_by(order_field)
 
     # --- Lógica de Formulario Agregar ---
     # Se maneja el POST aquí para agregar nuevos usuarios
@@ -110,7 +128,7 @@ def modulo_usuarios(request):
         form = UsuarioCreationForm()
 
     # --- Lógica de Paginación ---
-    paginator = Paginator(usuarios, 5) # 5 usuarios por página
+    paginator = Paginator(usuarios, per_page) # Usar el valor dinámico
     page_number = request.GET.get('page')
 
     try:
@@ -132,17 +150,26 @@ def modulo_usuarios(request):
         'form': form,
         'ROL_CHOICES': ROL_CHOICES,
         'edit_mode': False,
+        'per_page': per_page, # Pasar el valor al contexto
+        'sort_by': sort_by,  # Pasar el valor al contexto
     }
 
-    # --- Respuesta Diferenciada (Normal vs AJAX) ---
+    # Respuesta Diferenciada (Normal vs AJAX)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         # Si es AJAX (desde el filtro), renderiza SOLO la tabla parcial
-        html = render_to_string(
+        table_html = render_to_string(
             template_name="usuarios/_user_list_partial.html", # Ruta correcta para la plantilla parcial
             context=context # Pasamos el contexto completo que ya tiene page_obj
         )
+        pagination_html = render_to_string(
+            template_name="usuarios/_user_pagination.html",
+            context=context
+        )
         # Devolver el HTML como parte de una respuesta JSON
-        data_dict = {"html_from_view": html}
+        data_dict = {
+            "html_from_view": table_html,
+            "pagination_html": pagination_html
+        }
         return JsonResponse(data=data_dict, safe=False)
     else:
         # Si es una petición normal (GET o POST con error), renderiza la página completa

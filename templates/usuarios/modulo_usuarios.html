@@ -114,7 +114,7 @@
             </div>
 
             <!-- Controles de Filtro (sin formulario) -->
-            <div class="row g-3 mb-4 align-items-center">
+            <div class="row g-3 mb-3 align-items-end">
                 <div class="col-md-4">
                     <label for="q_id" class="visually-hidden">Buscar</label>
                     <input type="text" class="form-control" id="q_id" name="q" placeholder="Buscar por username o email..." value="{{ request.GET.q|default:'' }}">
@@ -134,6 +134,34 @@
                         <option value="">Todos los estados</option>
                         <option value="activo">Activo</option>
                         <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row g-3 mb-4 align-items-end">
+                <div class="col-md-4">
+                    <label for="sort_by_id" class="form-label">Ordenar por:</label>
+                    <select class="form-select form-select-sm" id="sort_by_id" name="sort_by">
+                        <option value="">Por defecto (Username A-Z)</option>
+                        <option value="username_asc" {% if sort_by == 'username_asc' %}selected{% endif %}>Username (A-Z)</option>
+                        <option value="username_desc" {% if sort_by == 'username_desc' %}selected{% endif %}>Username (Z-A)</option>
+                        <option value="email_asc" {% if sort_by == 'email_asc' %}selected{% endif %}>Email (A-Z)</option>
+                        <option value="email_desc" {% if sort_by == 'email_desc' %}selected{% endif %}>Email (Z-A)</option>
+                        <option value="rol_asc" {% if sort_by == 'rol_asc' %}selected{% endif %}>Rol (A-Z)</option>
+                        <option value="rol_desc" {% if sort_by == 'rol_desc' %}selected{% endif %}>Rol (Z-A)</option>
+                        <option value="is_active_desc" {% if sort_by == 'is_active_desc' %}selected{% endif %}>Estado (Activo primero)</option>
+                        <option value="is_active_asc" {% if sort_by == 'is_active_asc' %}selected{% endif %}>Estado (Inactivo primero)</option>
+                        <option value="date_joined_desc" {% if sort_by == 'date_joined_desc' %}selected{% endif %}>Fecha de Creación (más reciente)</option>
+                        <option value="date_joined_asc" {% if sort_by == 'date_joined_asc' %}selected{% endif %}>Fecha de Creación (más antigua)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="entries_per_page_id" class="form-label">Mostrar:</label>
+                    <select class="form-select form-select-sm" id="entries_per_page_id" name="per_page">
+                        {% for i in "12345"|make_list %}
+                            <option value="{{ i }}" {% if per_page == i|add:0 %}selected{% endif %}>
+                                {{ i }}
+                            </option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>
@@ -170,6 +198,8 @@
     const searchInput = document.getElementById('q_id');
     const rolSelect = document.getElementById('rol_filtro_id');
     const estadoSelect = document.getElementById('estado_filtro_id');
+    const perPageSelect = document.getElementById('entries_per_page_id'); // Nuevo selector
+    const sortBySelect = document.getElementById('sort_by_id'); // Nuevo selector de ordenamiento
     const userTableBody = document.getElementById('user-table-body');
     const exportBtn = document.getElementById('export-excel-btn');
     const paginationContainer = document.getElementById('user-pagination-container');
@@ -182,7 +212,9 @@
         const params = new URLSearchParams({
             q: searchInput.value,
             rol_filtro: rolSelect.value,
-            estado_filtro: estadoSelect.value
+            estado_filtro: estadoSelect.value,
+            per_page: perPageSelect.value, // Añadir el nuevo parámetro
+            sort_by: sortBySelect.value // Añadir el nuevo parámetro de ordenamiento
         });
 
         if (!fetchUrl) {
@@ -200,8 +232,9 @@
         })
         .then(response => response.json())
         .then(data => {
-            // Reemplazar el contenido de la tabla con el HTML recibido
+            // Reemplazar el contenido de la tabla y la paginación con el HTML recibido
             userTableBody.innerHTML = data.html_from_view;
+            paginationContainer.innerHTML = data.pagination_html; // Esto se mantiene
             attachPaginationListeners(); // Volver a asignar listeners a los nuevos enlaces
         })
         .catch(error => {
@@ -217,9 +250,18 @@
             fetchFilteredUsers();
         }, 300); // Espera 300ms después de dejar de escribir
     });
-    // Para los selects
-    rolSelect.addEventListener('change', fetchFilteredUsers);
-    estadoSelect.addEventListener('change', fetchFilteredUsers);
+
+    // Para los selects (al cambiar un filtro, se resetea la página a 1)
+    function handleFilterChange() {
+        sessionStorage.removeItem('userListPage'); // Olvidar la página guardada al filtrar
+        sessionStorage.setItem('userListPerPage', perPageSelect.value); // Guardar per_page
+        sessionStorage.setItem('userListSortBy', sortBySelect.value); // Guardar sort_by
+        fetchFilteredUsers();
+    }
+    rolSelect.addEventListener('change', handleFilterChange);
+    estadoSelect.addEventListener('change', handleFilterChange);
+    perPageSelect.addEventListener('change', handleFilterChange); // Añadir listener al nuevo selector
+    sortBySelect.addEventListener('change', handleFilterChange); // Añadir listener al nuevo selector de ordenamiento
 
     // --- Paginación AJAX ---
     function attachPaginationListeners() {
@@ -228,6 +270,12 @@
                 link.dataset.hasListener = 'true';
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
+                    // Guardar la página en sessionStorage antes de cargarla
+                    const url = new URL(this.href);
+                    const page = url.searchParams.get('page');
+                    if (page) {
+                        sessionStorage.setItem('userListPage', page);
+                    }
                     fetchFilteredUsers(this.href);
                 });
             }
@@ -237,6 +285,32 @@
     // Ejecutar al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
         attachPaginationListeners();
+
+        // Restaurar valores guardados de sessionStorage
+        const savedPerPage = sessionStorage.getItem('userListPerPage');
+        if (savedPerPage) {
+            perPageSelect.value = savedPerPage;
+        }
+        const savedSortBy = sessionStorage.getItem('userListSortBy');
+        if (savedSortBy) {
+            sortBySelect.value = savedSortBy;
+        }
+
+        // Construir URL inicial con los filtros y ordenamiento actuales (restaurados)
+        const initialParams = new URLSearchParams({
+            q: searchInput.value,
+            rol_filtro: rolSelect.value,
+            estado_filtro: estadoSelect.value,
+            per_page: perPageSelect.value,
+            sort_by: sortBySelect.value
+        });
+
+        // Comprobar si hay una página guardada
+        const savedPage = sessionStorage.getItem('userListPage');
+        if (savedPage && savedPage !== '1') {
+            initialParams.set('page', savedPage);
+        }
+        fetchFilteredUsers(`${filterUrl}?${initialParams.toString()}`);
     });
 
 </script>
