@@ -2,94 +2,49 @@
 
 {% block content %}
 <style>
-    body {
-        background-color: #f8f9fa;
-    }
-    .main-container {
-        padding: 2rem;
-        max-width: 1400px;
-        margin: auto;
-    }
+    body { background-color: #f8f9fa; }
+    .main-container { padding: 2rem; max-width: 1400px; margin: auto; }
     .summary-card {
-        background-color: #fff;
-        border-radius: 0.75rem;
+        background-color: #fff; border-radius: 0.75rem;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        padding: 1.5rem;
-        text-align: center;
-        margin-bottom: 1.5rem;
+        padding: 1.5rem; text-align: center; margin-bottom: 1.5rem;
     }
-    .summary-card h5 {
-        color: #6c757d;
-        font-size: 1rem;
-        margin-bottom: 0.5rem;
-    }
-    .summary-card .display-4 {
-        font-weight: 500;
-    }
+    .summary-card h5 { color: #6c757d; font-size: 1rem; margin-bottom: 0.5rem; }
+    .summary-card .display-4 { font-weight: 500; }
     .card {
-        background-color: #fff;
-        border-radius: 0.75rem;
+        background-color: #fff; border-radius: 0.75rem;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        padding: 1.5rem;
-        margin-bottom: 2rem;
+        padding: 1.5rem; margin-bottom: 2rem;
     }
-    .card-header {
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #dee2e6;
-    }
-    .nav-tabs .nav-link.active {
-        color: #0d6efd;
-        border-color: #0d6efd;
-    }
-    .table-responsive {
-        margin-top: 1.5rem;
-    }
-    .table .badge {
-        font-size: 0.8em;
-        padding: 0.4em 0.7em;
-    }
+    .card-header { padding-bottom: 1rem; border-bottom: 1px solid #dee2e6; }
+    .nav-tabs .nav-link.active { color: #0d6efd; border-color: #0d6efd; }
+    .table-responsive { margin-top: 1.5rem; }
+    .table .badge { font-size: 0.8em; padding: 0.4em 0.7em; }
     .badge-success { background-color: #28a745; }
     .badge-danger { background-color: #dc3545; }
 </style>
 
 <div class="main-container">
+    <!-- === TARJETAS DE RESUMEN === -->
     <div class="row">
-        <div class="col-md-4">
-            <div class="summary-card">
-                <h5>Movimientos (hoy)</h5>
-                <h2 class="display-4">{{ summary.movimientos_hoy }}</h2>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="summary-card">
-                <h5>Stock Total</h5>
-                <h2 class="display-4">{{ summary.stock_total|floatformat:0 }}</h2>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="summary-card">
-                <h5>Productos Únicos</h5>
-                <h2 class="display-4">{{ summary.productos_unicos }}</h2>
-            </div>
-        </div>
+        <div class="col-md-4"><div class="summary-card"><h5>Movimientos (hoy)</h5><h2 class="display-4">{{ summary.movimientos_hoy }}</h2></div></div>
+        <div class="col-md-4"><div class="summary-card"><h5>Stock Total</h5><h2 class="display-4">{{ summary.stock_total|floatformat:0 }}</h2></div></div>
+        <div class="col-md-4"><div class="summary-card"><h5>Productos Únicos</h5><h2 class="display-4">{{ summary.productos_unicos }}</h2></div></div>
     </div>
 
+    <!-- === FORMULARIO DE MOVIMIENTOS === -->
     <div class="card">
         <h5 class="card-header mb-3">Registrar Movimiento</h5>
         <form method="POST" action="{% url 'modulo_inventario' %}">
             {% csrf_token %}
             <ul class="nav nav-tabs" id="movementTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#datos" type="button">1. Datos del Movimiento</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#avanzado" type="button">2. Trazabilidad</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#referencias" type="button">3. Documentación</button>
-                </li>
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#datos" type="button">1. Datos del Movimiento</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#avanzado" type="button">2. Trazabilidad</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#referencias" type="button">3. Documentación</button></li>
             </ul>
+
             <div class="tab-content pt-3">
+                <!-- === Pestaña: Datos Principales === -->
                 <div class="tab-pane fade show active" id="datos">
                     <div class="row">
                         <div class="col-md-3">
@@ -106,35 +61,25 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- === Pestaña: Trazabilidad === -->
                 <div class="tab-pane fade" id="avanzado">
                     <div class="row">
-                         <div class="col-md-4">
-                            <label class="form-label">{{ form.lote.label }}</label>
-                            {{ form.lote }}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">{{ form.serie.label }}</label>
-                            {{ form.serie }}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">{{ form.fecha_vencimiento.label }}</label>
-                            {{ form.fecha_vencimiento }}
-                        </div>
+                        <div class="col-md-4"><label class="form-label">{{ form.lote.label }}</label>{{ form.lote }}</div>
+                        <div class="col-md-4"><label class="form-label">{{ form.serie.label }}</label>{{ form.serie }}</div>
+                        <div class="col-md-4"><label class="form-label">{{ form.fecha_vencimiento.label }}</label>{{ form.fecha_vencimiento }}</div>
                     </div>
                 </div>
+
+                <!-- === Pestaña: Documentación === -->
                 <div class="tab-pane fade" id="referencias">
                     <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label">{{ form.documento_referencia.label }}</label>
-                            {{ form.documento_referencia }}
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">{{ form.observaciones.label }}</label>
-                            {{ form.observaciones }}
-                        </div>
+                        <div class="col-md-6"><label class="form-label">{{ form.documento_referencia.label }}</label>{{ form.documento_referencia }}</div>
+                        <div class="col-md-6"><label class="form-label">{{ form.observaciones.label }}</label>{{ form.observaciones }}</div>
                     </div>
                 </div>
             </div>
+
             <div class="d-flex justify-content-end mt-4">
                 <button type="reset" class="btn btn-secondary me-2">Limpiar</button>
                 <button type="submit" class="btn btn-primary">Guardar Movimiento</button>
@@ -142,18 +87,20 @@
         </form>
     </div>
 
+    <!-- === HISTORIAL DE MOVIMIENTOS === -->
     <div class="card">
         <h5 class="card-header">Historial de Movimientos Recientes</h5>
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th scope="col">Fecha</th>
-                        <th scope="col">Tipo</th>
-                        <th scope="col">Producto (SKU)</th>
-                        <th scope="col" class="text-center">Cantidad</th>
-                        <th scope="col">Usuario</th>
-                        <th scope="col">Doc. Ref.</th>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Producto (SKU)</th>
+                        <th class="text-center">Cantidad</th>
+                        <th>Usuario</th>
+                        <th>Doc. Ref.</th>
+                        <th class="text-end">Acciones</th> <!-- 🔹 Nueva columna -->
                     </tr>
                 </thead>
                 <tbody>
@@ -175,16 +122,26 @@
                         </td>
                         <td>{{ m.usuario.username|default:"Sistema" }}</td>
                         <td>{{ m.documento_referencia|default:"-" }}</td>
+                        <!-- 🔹 Botones de acción -->
+                        <td class="text-end">
+                            <a href="{% url 'editar_movimiento' m.id %}" class="btn btn-sm btn-outline-primary me-1">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </a>
+                            <form method="POST" action="{% url 'eliminar_movimiento' m.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar este movimiento?');">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted py-4">No hay movimientos registrados todavía.</td>
-                    </tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4">No hay movimientos registrados todavía.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <!-- Paginación -->
+
         {% if movimientos.has_other_pages %}
         <nav aria-label="Paginación de movimientos" class="mt-4">
             <ul class="pagination justify-content-center">
@@ -193,7 +150,6 @@
                 {% else %}
                     <li class="page-item disabled"><span class="page-link">Anterior</span></li>
                 {% endif %}
-
                 {% for num in movimientos.paginator.page_range %}
                     {% if movimientos.number == num %}
                         <li class="page-item active"><span class="page-link">{{ num }}</span></li>
@@ -201,7 +157,6 @@
                         <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
                     {% endif %}
                 {% endfor %}
-
                 {% if movimientos.has_next %}
                     <li class="page-item"><a class="page-link" href="?page={{ movimientos.next_page_number }}">Siguiente</a></li>
                 {% else %}
@@ -212,4 +167,30 @@
         {% endif %}
     </div>
 </div>
+
+<!-- === AUTOCOMPLETADO SKU === -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+<script>
+$(window).on('load', function() {
+    const skuField = $('#id_sku_producto');
+    if (skuField.length) {
+        console.log("✅ Campo SKU encontrado:", skuField);
+        skuField.autocomplete({
+            source: "{% url 'autocomplete_sku' %}",
+            minLength: 1,
+            delay: 200,
+            select: function(event, ui) {
+                skuField.val(ui.item.value);
+                return false;
+            }
+        });
+    } else {
+        console.error("⚠️ No se encontró el campo sku_producto en el DOM");
+    }
+});
+</script>
+
 {% endblock %}

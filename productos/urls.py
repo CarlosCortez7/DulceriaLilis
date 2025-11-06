@@ -19,7 +19,10 @@ urlpatterns = [
     path('productos/exportar/', exportar_excel_productos, name='exportar_excel_productos'),
 
     #inventario
-    path('inventario/', modulo_inventario, name='modulo_inventario'),
+    path('inventario/', views.modulo_inventario, name='modulo_inventario'),
+    path('autocomplete_sku/', views.autocomplete_sku, name='autocomplete_sku'),
+    path('inventario/editar/<int:id>/', views.editar_movimiento, name='editar_movimiento'),
+path('inventario/eliminar/<int:id>/', views.eliminar_movimiento, name='eliminar_movimiento'),
 
     # Categorias
     path('categorias/', views.listar_categorias, name='listar_categorias'),

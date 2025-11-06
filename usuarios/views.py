@@ -57,7 +57,7 @@ def iniciar_sesion(request):
             messages.success(request, f'Bienvenido de nuevo, {user.username}.')
             return redirect('home')
         else:
-            return render(request, 'iniciar_sesion.html', {
+            return render(request, 'usuarios/iniciar_sesion.html', {
                 'form': form,
             })
 

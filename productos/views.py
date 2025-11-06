@@ -11,6 +11,8 @@ from django.core.paginator import Paginator, EmptyPage,PageNotAnInteger
 import openpyxl
 from django.utils import timezone
 from datetime import timedelta
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
 
 
 # Create your views here.
@@ -179,67 +181,119 @@ def modulo_productos(request):
 
 @login_required
 def modulo_inventario(request):
+    """
+    Módulo de inventario: permite registrar movimientos (ingreso/salida/ajuste),
+    actualizar el stock del producto y mostrar el historial con resumen diario.
+    """
+    # --- POST: Registrar movimiento ---
     if request.method == 'POST':
         form = MovimientoInventarioForm(request.POST)
         if form.is_valid():
-            sku = form.cleaned_data['sku_producto']
+            sku = form.cleaned_data['sku_producto'].strip().upper()  # limpia y normaliza el SKU
+            cantidad = form.cleaned_data['cantidad']
+            tipo = form.cleaned_data['tipo_movimiento']
+
             try:
                 producto = Producto.objects.get(sku=sku)
-                movimiento = form.save(commit=False)
-                movimiento.producto = producto
-                movimiento.usuario = request.user
-
-                # Actualizar stock del producto
-                cantidad = form.cleaned_data['cantidad']
-                if movimiento.tipo_movimiento == 'INGRESO':
-                    producto.stock_actual += cantidad
-                elif movimiento.tipo_movimiento == 'SALIDA':
-                    if producto.stock_actual < cantidad:
-                        messages.error(request, f"Stock insuficiente para {producto.nombre}. Stock actual: {producto.stock_actual}.")
-                        # No guardar y redirigir
-                        return redirect('modulo_inventario')
-                    producto.stock_actual -= cantidad
-                
-                producto.save()
-                movimiento.save()
-                messages.success(request, f"Movimiento de '{movimiento.tipo_movimiento}' para '{producto.nombre}' registrado correctamente.")
-
             except Producto.DoesNotExist:
-                messages.error(request, f"El producto con SKU '{sku}' no existe.")
-        else:
-            messages.error(request, "Error al registrar el movimiento. Revisa los datos del formulario.")
-        return redirect('modulo_inventario')
+                messages.error(request, f" El producto con SKU '{sku}' no existe.")
+                return redirect('modulo_inventario')
 
-    # --- Lógica para GET (Carga de página) ---
+            # Crear el movimiento sin guardar aún
+            movimiento = form.save(commit=False)
+            movimiento.producto = producto
+            movimiento.usuario = request.user
+
+            # --- Lógica de actualización de stock ---
+            if tipo == 'INGRESO':
+                producto.stock_actual += cantidad
+                movimiento.save()
+                producto.save()
+                messages.success(request, f" Ingreso de {cantidad} unidades al producto '{producto.nombre}' registrado correctamente.")
+
+            elif tipo == 'SALIDA':
+                if producto.stock_actual < cantidad:
+                    messages.error(request, f" Stock insuficiente para '{producto.nombre}'. Stock actual: {producto.stock_actual}.")
+                    return redirect('modulo_inventario')
+                producto.stock_actual -= cantidad
+                movimiento.save()
+                producto.save()
+                messages.success(request, f" Salida de {cantidad} unidades del producto '{producto.nombre}' registrada correctamente.")
+
+            elif tipo == 'AJUSTE':
+                # En ajustes no alteramos el stock directamente (opcional)
+                movimiento.save()
+                messages.info(request, f" Movimiento de ajuste registrado para '{producto.nombre}'.")
+
+            else:
+                messages.warning(request, " Tipo de movimiento no reconocido.")
+
+            return redirect('modulo_inventario')
+        else:
+            messages.error(request, " Error al registrar el movimiento. Revisa los datos del formulario.")
+            return redirect('modulo_inventario')
+
+    # --- GET: Carga de página ---
     form = MovimientoInventarioForm()
-    
-    # Datos para tarjetas de resumen
+
+    # --- Tarjetas de resumen ---
     today = timezone.now().date()
     movimientos_hoy = MovimientoInventario.objects.filter(fecha_movimiento__date=today).count()
     stock_total = Producto.objects.aggregate(total=Sum('stock_actual'))['total'] or 0
     productos_unicos = Producto.objects.count()
 
-    # Historial de movimientos con paginación
-    historial_movimientos = MovimientoInventario.objects.all().select_related('producto', 'usuario')
-    paginator = Paginator(historial_movimientos, 10) # 10 movimientos por página
+    # --- Historial con paginación ---
+    historial_movimientos = MovimientoInventario.objects.select_related('producto', 'usuario').order_by('-fecha_movimiento')
+    paginator = Paginator(historial_movimientos, 10)
     page_number = request.GET.get('page')
+
     try:
-        page_obj = paginator.page(page_number)
+        movimientos_page = paginator.page(page_number)
     except PageNotAnInteger:
-        page_obj = paginator.page(1)
+        movimientos_page = paginator.page(1)
     except EmptyPage:
-        page_obj = paginator.page(paginator.num_pages)
-    
+        movimientos_page = paginator.page(paginator.num_pages)
+
+    # --- Contexto al template ---
     context = {
         'form': form,
-        'movimientos': page_obj,
+        'movimientos': movimientos_page,
         'summary': {
             'movimientos_hoy': movimientos_hoy,
             'stock_total': stock_total,
             'productos_unicos': productos_unicos,
-        }
-    }    
+        },
+    }
+
     return render(request, 'productos/inventario.html', context)
+
+
+
+@login_required
+def editar_movimiento(request, id):
+    movimiento = get_object_or_404(MovimientoInventario, id=id)
+    form = MovimientoInventarioForm(request.POST or None, instance=movimiento)
+
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Movimiento actualizado correctamente.")
+            return redirect('modulo_inventario')
+        else:
+            messages.error(request, "Error al actualizar el movimiento. Revisa los datos.")
+    
+    return render(request, 'productos/inventario_editar.html', {'form': form, 'movimiento': movimiento})
+
+
+@login_required
+def eliminar_movimiento(request, id):
+    movimiento = get_object_or_404(MovimientoInventario, id=id)
+    if request.method == 'POST':
+        movimiento.delete()
+        messages.success(request, 'Movimiento eliminado correctamente.')
+        return redirect('modulo_inventario')
+    return render(request, 'productos/inventario_eliminar.html', {'movimiento': movimiento})
+
 
 @login_required
 def eliminar_producto(request, product_id):
@@ -413,3 +467,19 @@ def eliminar_categoria(request, id):
     categoria.delete()
     messages.success(request, 'Categoría eliminada correctamente.')
     return redirect('listar_categorias')
+
+
+
+def autocomplete_sku(request):
+    term = request.GET.get('term', '').strip()
+    if not term:
+        return JsonResponse([], safe=False)
+    
+    productos = Producto.objects.filter(nombre__icontains=term)[:10]  # los 10 primeros resultados
+    results = []
+    for p in productos:
+        results.append({
+            'label': f"{p.sku} - {p.nombre}",
+            'value': p.sku
+        })
+    return JsonResponse(results, safe=False)
