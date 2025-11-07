@@ -169,16 +169,18 @@ def modulo_productos(request):
 
 
 @login_required
+
 def modulo_inventario(request):
     """
     Módulo de inventario: permite registrar movimientos (ingreso/salida/ajuste),
     actualizar el stock del producto y mostrar el historial con resumen diario.
     """
+
     # --- POST: Registrar movimiento ---
     if request.method == 'POST':
         form = MovimientoInventarioForm(request.POST)
         if form.is_valid():
-            sku = form.cleaned_data['sku_producto'].strip().upper()  # limpia y normaliza el SKU
+            sku = form.cleaned_data['sku_producto'].strip().upper()
             cantidad = form.cleaned_data['cantidad']
             tipo = form.cleaned_data['tipo_movimiento']
 
@@ -191,7 +193,7 @@ def modulo_inventario(request):
             # Crear el movimiento sin guardar aún
             movimiento = form.save(commit=False)
             movimiento.producto = producto
-            movimiento.usuario = request.user
+            movimiento.usuario = request.user if request.user.is_authenticated else None
 
             # --- Lógica de actualización de stock ---
             if tipo == 'INGRESO':
@@ -210,9 +212,8 @@ def modulo_inventario(request):
                 messages.success(request, f" Salida de {cantidad} unidades del producto '{producto.nombre}' registrada correctamente.")
 
             elif tipo == 'AJUSTE':
-                # En ajustes no alteramos el stock directamente (opcional)
                 movimiento.save()
-                messages.info(request, f" Movimiento de ajuste registrado para '{producto.nombre}'.")
+                messages.info(request, f"ℹ Movimiento de ajuste registrado para '{producto.nombre}'.")
 
             else:
                 messages.warning(request, " Tipo de movimiento no reconocido.")
@@ -223,6 +224,72 @@ def modulo_inventario(request):
             return redirect('modulo_inventario')
 
     # --- GET: Carga de página ---
+    form = MovimientoInventarioForm()
+
+    # --- Tarjetas de resumen ---
+    today = timezone.now().date()
+    movimientos_hoy = MovimientoInventario.objects.filter(fecha_movimiento__date=today).count()
+    stock_total = Producto.objects.aggregate(total=Sum('stock_actual'))['total'] or 0
+    productos_unicos = Producto.objects.count()
+
+    # --- Historial con paginación ---
+    historial_movimientos = MovimientoInventario.objects.select_related('producto', 'usuario').order_by('-fecha_movimiento')
+    paginator = Paginator(historial_movimientos, 4)  # 10 movimientos por página
+    page_number = request.GET.get('page', 1)
+
+    try:
+        movimientos_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        movimientos_page = paginator.page(1)
+    except EmptyPage:
+        movimientos_page = paginator.page(paginator.num_pages)
+
+    # --- Contexto al template ---
+    context = {
+        'form': form,
+        'movimientos': movimientos_page,
+        'summary': {
+            'movimientos_hoy': movimientos_hoy,
+            'stock_total': stock_total,
+            'productos_unicos': productos_unicos,
+        },
+    }
+
+    return render(request, 'productos/inventario.html', context)
+
+def buscar_movimientos(request):
+    """Devuelve resultados filtrados del historial en formato JSON (AJAX)."""
+    query = request.GET.get('q', '').strip()
+    tipo = request.GET.get('tipo', '').strip()
+    usuario = request.GET.get('usuario', '').strip()
+
+    movimientos = MovimientoInventario.objects.select_related('producto', 'usuario').order_by('-fecha_movimiento')
+
+    if query:
+        movimientos = movimientos.filter(
+            Q(producto__nombre__icontains=query) |
+            Q(producto__sku__icontains=query) |
+            Q(usuario__username__icontains=query)
+        )
+
+    if tipo:
+        movimientos = movimientos.filter(tipo_movimiento=tipo)
+
+    if usuario:
+        movimientos = movimientos.filter(usuario__username=usuario)
+
+    data = []
+    for m in movimientos[:30]:  # limitar resultados
+        data.append({
+            'id': m.id,
+            'fecha': m.fecha_movimiento.strftime('%Y-%m-%d %H:%M'),
+            'tipo': m.tipo_movimiento,
+            'producto': f"{m.producto.nombre} ({m.producto.sku})",
+            'cantidad': m.cantidad,
+            'usuario': m.usuario.username if m.usuario else 'Sistema',
+            'doc': m.documento_referencia or '-',
+        })
+    return JsonResponse({'resultados': data})
     form = MovimientoInventarioForm()
 
     # --- Tarjetas de resumen ---
@@ -424,6 +491,23 @@ def listar_categorias(request):
     }
 
     return render(request, 'productos/categorias/listar.html', context)
+@login_required
+def buscar_categorias(request):
+    """Filtra categorías por nombre en tiempo real"""
+    query = request.GET.get('q', '').strip()
+    categorias = Categoria.objects.all()
+
+    if query:
+        categorias = categorias.filter(nombre__icontains=query)
+
+    # Renderiza el HTML parcial actualizado
+    html = render_to_string(
+        'productos/categorias/_category_list_partial.html',
+        {'categorias': categorias, 'page_obj': None},
+        request=request
+    )
+    return JsonResponse({'html': html})
+
 @login_required
 def crear_categoria(request):
     if request.method == 'POST':
