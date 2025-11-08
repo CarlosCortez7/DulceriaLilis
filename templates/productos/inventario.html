@@ -33,6 +33,7 @@
         <div class="col-md-4"><div class="summary-card"><h5>Productos Únicos</h5><h2 class="display-4">{{ summary.productos_unicos }}</h2></div></div>
     </div>
 
+    {% if not solo_lectura %}
     <!-- === FORMULARIO DE MOVIMIENTOS === -->
     <div class="card">
         <h5 class="card-header mb-3">Registrar Movimiento</h5>
@@ -75,6 +76,7 @@
             </div>
         </form>
     </div>
+    {% endif %}
 
     <!-- === HISTORIAL DE MOVIMIENTOS === -->
     <div class="card">
@@ -137,12 +139,16 @@
                         <td>{{ m.usuario.username|default:"Sistema" }}</td>
                         <td>{{ m.documento_referencia|default:"-" }}</td>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick="confirmarEdicion('{{ m.id }}', '{{ m.producto.nombre }}')">
-                                <i class="bi bi-pencil-square"></i> Editar
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminacion('{{ m.id }}', '{{ m.producto.nombre }}')">
-                                <i class="bi bi-trash"></i> Eliminar
-                            </button>
+                            {% if not solo_lectura %}
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="confirmarEdicion('{{ m.id }}', '{{ m.producto.nombre }}')">
+                                    <i class="bi bi-pencil-square"></i> Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminacion('{{ m.id }}', '{{ m.producto.nombre }}')">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            {% else %}
+                                <span class="text-muted">🔒 Solo lectura</span>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
@@ -185,9 +191,20 @@
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+{% if solo_lectura %}
+<script>
+Swal.fire({
+    title: "Modo solo lectura",
+    text: "Tu rol es Finanzas, por lo que no puedes registrar ni modificar movimientos.",
+    icon: "info",
+    confirmButtonText: "Entendido",
+    confirmButtonColor: "#0d6efd"
+});
+</script>
+{% endif %}
+
 <script>
 $(window).on('load', function() {
-
     // === AUTOCOMPLETADO SKU ===
     const skuField = $('#id_sku_producto');
     if (skuField.length) {
@@ -283,12 +300,16 @@ $(window).on('load', function() {
                             <td>${m.usuario}</td>
                             <td>${m.doc}</td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-primary me-1" onclick="confirmarEdicion(${m.id}, '${m.producto}')">
-                                    <i class="bi bi-pencil-square"></i> Editar
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminacion(${m.id}, '${m.producto}')">
-                                    <i class="bi bi-trash"></i> Eliminar
-                                </button>
+                                {% if not solo_lectura %}
+                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="confirmarEdicion(${m.id}, '${m.producto}')">
+                                        <i class="bi bi-pencil-square"></i> Editar
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminacion(${m.id}, '${m.producto}')">
+                                        <i class="bi bi-trash"></i> Eliminar
+                                    </button>
+                                {% else %}
+                                    <span class="text-muted">🔒 Solo lectura</span>
+                                {% endif %}
                             </td>
                         </tr>
                     `);

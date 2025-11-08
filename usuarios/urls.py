@@ -45,4 +45,7 @@ urlpatterns = [
     path("reset/complete/", auth_views.PasswordResetCompleteView.as_view(
         template_name="usuarios/password_reset_complete.html"
     ), name="password_reset_complete"),
+#funcion para mostrar pagina sin permiso
+    path('sin_permiso/', views.sin_permiso, name='sin_permiso'),
+
 ]

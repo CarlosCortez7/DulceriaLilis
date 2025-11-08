@@ -7,7 +7,7 @@
             <i class="bi bi-pencil-square text-primary"></i> Editar Movimiento
         </h3>
 
-        <form method="POST" action="{% url 'editar_movimiento' movimiento.id %}">
+        <form id="formEditarMovimiento" method="POST" action="{% url 'editar_movimiento' movimiento.id %}">
             {% csrf_token %}
 
             <!-- === DATOS PRINCIPALES === -->
@@ -59,7 +59,7 @@
                 <a href="{% url 'modulo_inventario' %}" class="btn btn-secondary me-2">
                     <i class="bi bi-arrow-left"></i> Cancelar
                 </a>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" id="btnGuardarCambios" class="btn btn-primary">
                     <i class="bi bi-save"></i> Guardar Cambios
                 </button>
             </div>
@@ -78,6 +78,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // === Autocompletado SKU ===
     const skuField = $('#id_sku_producto');
     if (skuField.length) {
+        skuField.attr('required', true);
         skuField.autocomplete({
             source: "{% url 'autocomplete_sku' %}",
             minLength: 1,
@@ -89,7 +90,75 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // === SweetAlert para mensajes Django ===
+    // === Validaciones Front-End ===
+    $('#btnGuardarCambios').on('click', function(e) {
+        e.preventDefault();
+
+        const tipo = $('#id_tipo_movimiento').val();
+        const sku = $('#id_sku_producto').val().trim();
+        const cantidad = parseFloat($('#id_cantidad').val());
+        const fechaVenc = $('#id_fecha_vencimiento').val();
+        const doc = $('#id_documento_referencia').val()?.trim() || '';
+        const obs = $('#id_observaciones').val()?.trim() || '';
+
+        // Validar tipo movimiento
+        if (!tipo) {
+            Swal.fire('Campo requerido', 'Debes seleccionar un tipo de movimiento.', 'warning');
+            return;
+        }
+
+        // Validar SKU
+        if (!sku) {
+            Swal.fire('Campo requerido', 'El campo SKU no puede estar vacío.', 'warning');
+            return;
+        }
+
+        // Validar cantidad
+        if (isNaN(cantidad) || cantidad <= 0) {
+            Swal.fire('Valor inválido', 'La cantidad debe ser un número mayor que 0.', 'error');
+            return;
+        }
+
+        // Validar fecha de vencimiento
+        if (fechaVenc) {
+            const hoy = new Date();
+            const fechaSel = new Date(fechaVenc);
+            hoy.setHours(0, 0, 0, 0);
+            if (fechaSel < hoy) {
+                Swal.fire('Fecha inválida', 'La fecha de vencimiento no puede ser anterior a hoy.', 'error');
+                return;
+            }
+        }
+
+        // Validar documento referencia
+        if (doc.length > 0 && doc.replace(/\s/g, '') === '') {
+            Swal.fire('Campo inválido', 'El documento de referencia no puede estar vacío.', 'warning');
+            return;
+        }
+
+        // Validar observaciones (máx 300 caracteres)
+        if (obs.length > 300) {
+            Swal.fire('Texto demasiado largo', 'Las observaciones no pueden superar los 300 caracteres.', 'warning');
+            return;
+        }
+
+        // Confirmación final
+        Swal.fire({
+            title: '¿Guardar cambios?',
+            text: 'Se actualizará el movimiento en el inventario.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, guardar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0d6efd'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $('#formEditarMovimiento').submit();
+            }
+        });
+    });
+
+    // === Mensajes Django ===
     {% if messages %}
         {% for message in messages %}
             Swal.fire({

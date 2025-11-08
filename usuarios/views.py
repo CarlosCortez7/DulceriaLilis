@@ -328,3 +328,6 @@ def perfil_usuario(request):
         'avatar_form': avatar_form,
         'password_form': password_form,
     })
+
+def sin_permiso(request):
+    return render(request, 'usuarios/sin_permiso.html')

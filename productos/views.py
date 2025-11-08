@@ -4,7 +4,7 @@ from django.db.models import Q, Sum
 from .models import Producto, Categoria, MEDIDA_CHOICES, MovimientoInventario
 from django.contrib import messages
 from .forms import ProductoForm, MovimientoInventarioForm, CategoriaForm
-from django.contrib.auth.decorators import login_required 
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.template.loader import render_to_string
 from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator, EmptyPage,PageNotAnInteger
@@ -13,7 +13,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-
+from usuarios.decorators import solo_inventario
 
 # Create your views here.
 
@@ -169,15 +169,23 @@ def modulo_productos(request):
 
 
 @login_required
-
+@user_passes_test(solo_inventario, login_url='/usuarios/sin_permiso/')
 def modulo_inventario(request):
     """
     Módulo de inventario: permite registrar movimientos (ingreso/salida/ajuste),
     actualizar el stock del producto y mostrar el historial con resumen diario.
     """
 
+    # === 🔹 Detectar si el usuario solo puede ver ===
+    solo_lectura = request.user.rol == "finanzas"
+
     # --- POST: Registrar movimiento ---
     if request.method == 'POST':
+        # ⚠️ Si está en modo solo lectura, no puede registrar
+        if solo_lectura:
+            messages.warning(request, "No tienes permisos para registrar movimientos (modo solo lectura).")
+            return redirect('modulo_inventario')
+
         form = MovimientoInventarioForm(request.POST)
         if form.is_valid():
             sku = form.cleaned_data['sku_producto'].strip().upper()
@@ -234,7 +242,7 @@ def modulo_inventario(request):
 
     # --- Historial con paginación ---
     historial_movimientos = MovimientoInventario.objects.select_related('producto', 'usuario').order_by('-fecha_movimiento')
-    paginator = Paginator(historial_movimientos, 4)  # 10 movimientos por página
+    paginator = Paginator(historial_movimientos, 4)  # 4 movimientos por página
     page_number = request.GET.get('page', 1)
 
     try:
@@ -253,6 +261,7 @@ def modulo_inventario(request):
             'stock_total': stock_total,
             'productos_unicos': productos_unicos,
         },
+        'solo_lectura': solo_lectura,  # 👈 importante
     }
 
     return render(request, 'productos/inventario.html', context)
@@ -556,3 +565,4 @@ def autocomplete_sku(request):
             'value': p.sku
         })
     return JsonResponse(results, safe=False)
+
