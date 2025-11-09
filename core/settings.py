@@ -95,6 +95,10 @@ DATABASES = {
 }
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
+AUTHENTICATION_BACKENDS = [
+    'usuarios.backends.EmailOrUsernameBackend',  # tu backend personalizado
+    'django.contrib.auth.backends.ModelBackend',  # backend por defecto
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -151,12 +155,16 @@ LOGOUT_REDIRECT_URL = '/admin/login/'
 
 
 
-# ============================================================
-# CONFIGURACIÓN DE EMAIL PARA RECUPERAR CONTRASEÑA
-# ============================================================
-
-# En desarrollo, puedes usar este backend para ver los correos en la terminal:
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# ==============================
+# CONFIGURACIÓN DE EMAIL REAL (GMAIL)
+# ==============================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")  # <-- tu correo Gmail real
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")  # <-- la de 16 dígitos generada
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 # Configuraciones de sesión

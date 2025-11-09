@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.db import IntegrityError, models
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordResetView
 from django.contrib.auth.models import User
 from .form import CustomLoginForm, UsuarioCreationForm, UsuarioChangeForm, UsuarioPerfilForm, CustomPasswordChangeForm, AvatarForm
 from .models import Usuario, ROL_CHOICES # Importar ROL_CHOICES si está definido en models.py
@@ -19,6 +19,8 @@ from django.http import HttpResponse
 import openpyxl
 # Importar para paginación
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.urls import reverse_lazy
+from django.contrib.auth import get_backends
 
 # Create your views here.
 
@@ -32,7 +34,8 @@ def registrarse(request):
         form = UsuarioCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
+            backend = get_backends()[0]
+            login(request, user, backend=backend.__class__.__name__)
             messages.success(request, f'¡Bienvenido, {user.username}! Registro exitoso.')
             return redirect('home')
         else:
@@ -46,27 +49,29 @@ def logout_view(request):
 
 def iniciar_sesion(request):
     if request.method == 'GET':
-        form = CustomLoginForm()
+        form = CustomLoginForm(request=request)
         return render(request, 'usuarios/iniciar_sesion.html', {'form': form})
     else:
-        form = CustomLoginForm(data=request.POST)
+        form = CustomLoginForm(request=request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            request.session.cycle_key() # Regenerar clave de sesión por seguridad
+            request.session.cycle_key()
             messages.success(request, f'Bienvenido de nuevo, {user.username}.')
             return redirect('home')
         else:
-            return render(request, 'usuarios/iniciar_sesion.html', {
-                'form': form,
-            })
+            messages.error(request, "Correo o contraseña incorrectos.")
+            return render(request, 'usuarios/iniciar_sesion.html', {'form': form})
 
 class CustomLoginView(LoginView):
     template_name = 'iniciar_sesion.html'
     authentication_form = CustomLoginForm
 
-def recuperar_contrasenea(request):
-    return render(request, 'usuarios/recuperar_contrasena.html')
+class RecuperarContrasenaView(PasswordResetView):
+    template_name = 'usuarios/recuperar_contrasena.html'
+    email_template_name = 'usuarios/email/password_reset_email.txt'
+    subject_template_name = 'usuarios/email/password_reset_subject.txt'
+    success_url = reverse_lazy('iniciar_sesion')
 
 def crear_nueva_contrasena(request):
     return render(request, 'usuarios/crear_nueva_contrasena.html')

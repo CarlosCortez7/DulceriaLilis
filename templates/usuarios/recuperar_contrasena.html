@@ -105,17 +105,17 @@
         <h2>Recuperar contraseña</h2>
         <p>Ingresa tu correo o usuario y te enviaremos un enlace</p>
         
-        <form>
+        <form method="post">
+            {% csrf_token %}
             <div class="input-group">
-                <input type="text" id="email_user" name="email_user" placeholder="Correo o nombre de usuario">
+                {{ form.email }}
             </div>
-            
-            <button type="submit" class="forgot-link">Enviar instrucciones</button>
-            
+            <button type="submit" class="btn-primary">Enviar instrucciones</button>
+
             <div class="secondary-links">
-                <a href="/usuarios/iniciar_sesion">Volver al login</a>
+                <a href="{% url 'iniciar_sesion' %}">Volver al login</a>
                 <span>·</span>
-                <a href="/usuarios/crear_nueva_contrasena">Ya tengo el enlace</a>
+                <a href="{% url 'crear_nueva_contrasena' %}">Ya tengo el enlace</a>
             </div>
         </form>
     </div>
