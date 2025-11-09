@@ -1,202 +1,144 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <style>
-    body {
-        background-color: #f8f9fa;
-    }
-    .main-container {
-        padding: 2rem;
-        max-width: 1400px;
-        margin: auto;
-    }
-    .card {
-        background-color: #fff;
-        border-radius: 0.75rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #dee2e6;
-    }
-    /* Estilos para las pestañas del formulario */
-    .nav-tabs .nav-link {
-        color: #495057;
-        border-bottom: 2px solid transparent;
-        font-weight: 500;
-    }
-    .nav-tabs .nav-link.active {
-        color: #0d6efd;
-        border-color: #0d6efd;
-        background-color: transparent;
-        font-weight: 600;
-    }
-    .tab-content {
-        padding-top: 1.5rem;
-    }
-    .table th, .table td {
-        vertical-align: middle;
-    }
-    /* Asegura que los labels y los inputs se alineen */
-    .form-label {
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-        color: #343a40;
-    }
-    .form-control[readonly] {
-        background-color: #e9ecef;
-        opacity: 1;
-    }
-    .badge-active {
-        background-color: #d4edda;
-        color: #155724;
-        padding: 0.4em 0.7em;
-        border-radius: 0.375rem;
-        font-size: 0.75em;
-        font-weight: 600;
-    }
-    .badge-blocked {
-        background-color: #f8d7da;
-        color: #721c24;
-        padding: 0.4em 0.7em;
-        border-radius: 0.375rem;
-        font-size: 0.75em;
-        font-weight: 600;
-    }
-    .form-control, .form-select {
-        border-radius: 0.5rem;
-    }
+    body { background-color: #f8f9fa; }
+    .main-container { padding: 2rem; max-width: 1400px; margin: auto; }
+    .card { background-color: #fff; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1.5rem; margin-bottom: 2rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #dee2e6; }
+    .nav-tabs .nav-link { color: #495057; border-bottom: 2px solid transparent; font-weight: 500; }
+    .nav-tabs .nav-link.active { color: #0d6efd; border-color: #0d6efd; background-color: transparent; font-weight: 600; }
+    .tab-content { padding-top: 1.5rem; }
+    .table th, .table td { vertical-align: middle; }
+    .form-label { margin-bottom: 0.5rem; font-weight: 500; color: #343a40; }
+    .form-control[readonly] { background-color: #e9ecef; opacity: 1; }
+    .badge-active { background-color: #d4edda; color: #155724; padding: 0.4em 0.7em; border-radius: 0.375rem; font-size: 0.75em; font-weight: 600; }
+    .badge-blocked { background-color: #f8d7da; color: #721c24; padding: 0.4em 0.7em; border-radius: 0.375rem; font-size: 0.75em; font-weight: 600; }
+    .form-control, .form-select { border-radius: 0.5rem; }
 </style>
 
 <div class="main-container">
 
+    <!-- ================= FORMULARIO ================= -->
     <div class="card">
         <h5>Formulario de Proveedor</h5>
         
-        <form method="POST" action="{% url 'guardar_proveedor' %}">
+        <form method="POST" action="{% url 'modulo_proveedores' %}">
             {% csrf_token %}
             
             <ul class="nav nav-tabs mt-3" id="supplierTab" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="identificacion-tab" data-bs-toggle="tab" data-bs-target="#identificacion" type="button" role="tab" aria-controls="identificacion" aria-selected="true">1. Identificación y contacto</button>
+                    <button class="nav-link active" id="identificacion-tab" data-bs-toggle="tab" data-bs-target="#identificacion" type="button" role="tab">1. Identificación y contacto</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="direccion-tab" data-bs-toggle="tab" data-bs-target="#direccion" type="button" role="tab" aria-controls="direccion" aria-selected="false">2. Dirección y comercial</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="relacion-tab" data-bs-toggle="tab" data-bs-target="#relacion" type="button" role="tab" aria-controls="relacion" aria-selected="false">3. Relación con productos</button>
+                    <button class="nav-link" id="direccion-tab" data-bs-toggle="tab" data-bs-target="#direccion" type="button" role="tab">2. Dirección y comercial</button>
                 </li>
             </ul>
 
             <div class="tab-content" id="supplierTabContent">
                 
-                <div class="tab-pane fade show active" id="identificacion" role="tabpanel" aria-labelledby="identificacion-tab">
+                <!-- TAB 1 -->
+                <div class="tab-pane fade show active" id="identificacion" role="tabpanel">
                     <h6 class="mt-4">Identificación legal y contacto</h6>
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="id_pk" class="form-label">id/Pk</label>
-                            <input type="text" class="form-control" id="id_pk" name="id_pk" value="(autogenerado)" readonly>
+                            <label class="form-label">RUT/NIF (único)</label>
+                            <input type="text" class="form-control" name="rut_nif" placeholder="76.543.210-5" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="rut_nif" class="form-label">rut/nif (requerido, único)</label>
-                            <input type="text" class="form-control" id="rut_nif" name="rut_nif" placeholder="76.543.210-5" required>
+                            <label class="form-label">Razón social</label>
+                            <input type="text" class="form-control" name="razon_social" placeholder="Proveedor S.A." required>
                         </div>
                     </div>
+
                     <div class="mb-3">
-                        <label for="razon_social" class="form-label">razon_social (requerido)</label>
-                        <input type="text" class="form-control" id="razon_social" name="razon_social" placeholder="Proveedor S.A." required>
+                        <label class="form-label">Nombre de fantasía</label>
+                        <input type="text" class="form-control" name="nombre_fantasia" placeholder="ProvesMax">
                     </div>
-                    <div class="mb-3">
-                        <label for="nombre_fantasia" class="form-label">nombre_fantasia (opcional)</label>
-                        <input type="text" class="form-control" id="nombre_fantasia" name="nombre_fantasia" placeholder="ProvesMax">
-                    </div>
+
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <label for="email" class="form-label">email (requerido)</label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="contacto@proveedor.cl" required>
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" placeholder="contacto@proveedor.cl" required>
                         </div>
                         <div class="col-md-4">
-                            <label for="telefono" class="form-label">telefono (opcional)</label>
-                            <input type="tel" class="form-control" id="telefono" name="telefono" placeholder="+56 2 2345 6789">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" name="telefono" placeholder="+56 2 2345 6789">
                         </div>
                         <div class="col-md-4">
-                            <label for="sitio_web" class="form-label">sitio_web (opcional)</label>
-                            <input type="url" class="form-control" id="sitio_web" name="sitio_web" placeholder="https://proveedor.cl">
+                            <label class="form-label">Sitio web</label>
+                            <input type="url" class="form-control" name="sitio_web" placeholder="https://proveedor.cl">
+                        </div>
+                    </div>
+
+                    <h6 class="mt-4">Contacto principal</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control" name="contacto_principal_nombre" placeholder="Juan Pérez">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Correo</label>
+                            <input type="email" class="form-control" name="contacto_principal_email" placeholder="juan@proveedor.cl">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" name="contacto_principal_telefono" placeholder="+56 9 8765 4321">
                         </div>
                     </div>
                 </div>
 
-                <div class="tab-pane fade" id="direccion" role="tabpanel" aria-labelledby="direccion-tab">
-                    <h6 class="mt-4">Dirección y Contacto Comercial</h6>
-                    <div class="mb-3">
-                        <label for="direccion_fisica" class="form-label">Dirección física</label>
-                        <input type="text" class="form-control" id="direccion_fisica" name="direccion_fisica" placeholder="Av. Principal 123, Santiago">
-                    </div>
+                <!-- TAB 2 -->
+                <div class="tab-pane fade" id="direccion" role="tabpanel">
+                    <h6 class="mt-4">Dirección y Condiciones Comerciales</h6>
+
                     <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label for="comuna" class="form-label">Comuna</label>
-                            <input type="text" class="form-control" id="comuna" name="comuna" placeholder="Las Condes">
+                        <div class="col-md-6">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-control" name="direccion" placeholder="Av. Principal 123, Santiago">
                         </div>
-                        <div class="col-md-4">
-                            <label for="ciudad" class="form-label">Ciudad</label>
-                            <input type="text" class="form-control" id="ciudad" name="ciudad" placeholder="Santiago">
+                        <div class="col-md-3">
+                            <label class="form-label">Ciudad</label>
+                            <input type="text" class="form-control" name="ciudad" placeholder="Santiago">
                         </div>
-                        <div class="col-md-4">
-                            <label for="region" class="form-label">Región</label>
-                            <input type="text" class="form-control" id="region" name="region" placeholder="Metropolitana">
+                        <div class="col-md-3">
+                            <label class="form-label">País</label>
+                            <input type="text" class="form-control" name="pais" value="Chile">
                         </div>
                     </div>
 
-                    <h6 class="mt-4">Condiciones comerciales</h6>
                     <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="contacto_comercial" class="form-label">Contacto comercial</label>
-                            <input type="text" class="form-control" id="contacto_comercial" name="contacto_comercial" placeholder="Juan Pérez">
+                        <div class="col-md-4">
+                            <label class="form-label">Condiciones de pago</label>
+                            <input type="text" class="form-control" name="condiciones_pago" placeholder="30 días" required>
                         </div>
-                        <div class="col-md-6">
-                            <label for="telefono_comercial" class="form-label">Teléfono comercial</label>
-                            <input type="tel" class="form-control" id="telefono_comercial" name="telefono_comercial" placeholder="+56 9 8765 4321">
+                        <div class="col-md-4">
+                            <label class="form-label">Moneda</label>
+                            <input type="text" class="form-control" name="moneda" value="CLP">
                         </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="dias_credito" class="form-label">Días de crédito (opcional)</label>
-                            <input type="number" class="form-control" id="dias_credito" name="dias_credito" value="0" min="0">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="estado" class="form-label">Estado</label>
-                            <select class="form-select" id="estado" name="estado">
-                                <option value="ACTIVO">ACTIVO</option>
-                                <option value="BLOQUEADO">BLOQUEADO</option>
-                                <option value="PENDIENTE">PENDIENTE</option>
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select" name="tipo" required>
+                                <option value="materia_prima">Materia Prima</option>
+                                <option value="insumo">Insumo</option>
+                                <option value="servicio">Servicio</option>
+                                <option value="otros">Otros</option>
                             </select>
                         </div>
                     </div>
-                </div>
 
-                <div class="tab-pane fade" id="relacion" role="tabpanel" aria-labelledby="relacion-tab">
-                    <h6 class="mt-4">Productos Suministrados</h6>
-                    <p>Aquí se listarán los productos que este proveedor suministra. (Funcionalidad futura)</p>
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>SKU Producto</th>
-                                <th>Nombre Producto</th>
-                                <th>Costo Proveedor</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="3" class="text-center">No hay productos asociados a este proveedor.</td>
-                            </tr>
-                            </tbody>
-                    </table>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" name="estado">
+                                <option value="ACTIVO">Activo</option>
+                                <option value="BLOQUEADO">Bloqueado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Observaciones</label>
+                            <textarea class="form-control" name="observaciones" rows="2" placeholder="Notas adicionales"></textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -207,12 +149,13 @@
         </form>
     </div>
 
+    <!-- ================= LISTADO ================= -->
     <div class="card">
         <div class="card-header">
             <h5>Proveedores</h5>
             <a href="{% url 'exportar_excel_proveedores' %}" class="btn btn-success">Exportar a Excel</a>
         </div>
-        
+
         <form method="GET" action="{% url 'modulo_proveedores' %}">
             <div class="row mb-3">
                  <div class="col-md-5">
@@ -252,7 +195,7 @@
                         <td>{{ proveedor.email }}</td>
                         <td>
                             <a href="{% url 'editar_proveedor' proveedor.id %}" class="btn btn-sm btn-warning">Editar</a>
-                            <a href="{% url 'eliminar_proveedor' proveedor.id %}" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este proveedor?');">Eliminar</a>
+                            <a href="{% url 'eliminar_proveedor' proveedor.id %}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar proveedor?');">Eliminar</a>
                         </td>
                     </tr>
                     {% empty %}
