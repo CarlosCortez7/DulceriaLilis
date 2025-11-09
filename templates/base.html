@@ -63,6 +63,13 @@
           {% endif %}
 
           <!-- 🔹 Perfil y cerrar sesión -->
+          <!-- INICIO DEL CAMBIO: Enlace al nuevo CRUD -->
+          <li class="nav-item">
+            <a href="{% url 'gestion_orden_compra' %}" class="nav-link">Órdenes de Compra</a>
+          </li>
+          <!-- FIN DEL CAMBIO -->
+
+          <!-- 🔹 Nuevo menú de perfil -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownPerfil"
               role="button" data-bs-toggle="dropdown" aria-expanded="false">
