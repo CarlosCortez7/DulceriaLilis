@@ -1,5 +1,4 @@
 from django.urls import path
-# --- INICIO: IMPORTACIONES ACTUALIZADAS ---
 from proveedores.views import (
     modulo_proveedores,
     editar_proveedor,
@@ -13,7 +12,6 @@ from proveedores.views import (
     eliminar_detalle_orden,
     exportar_excel_ordenes
 )
-# --- FIN DE IMPORTACIONES ---
 
 urlpatterns = [
     # ------------------------------------------------------------------
@@ -78,7 +76,6 @@ urlpatterns = [
     # ------------------------------------------------------------------
     # RUTA DE UTILIDAD (Exportar Órdenes) (Req 3.v)
     # ------------------------------------------------------------------
-    # <--- EDITADO: Ruta añadida para cumplir la rúbrica
     path('ordenes/exportar/', 
          exportar_excel_ordenes, 
          name='exportar_excel_ordenes'),

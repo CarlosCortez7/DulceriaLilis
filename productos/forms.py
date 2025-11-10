@@ -11,7 +11,7 @@ class ProductoForm(forms.ModelForm):
             'impuesto_iva', 'stock_minimo', 'stock_maximo', 'punto_reorden', 'perishable',
             'control_por_lote', 'control_por_serie', 'imagen', 'ficha_tecnica', 'estado'
         ]
-        # (Opcional) Puedes añadir widgets aquí para aplicar clases de Bootstrap
+        
         widgets = {
             'sku': forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder':'SKU-0001'}),
             'ean_upc': forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder':'789...'}),

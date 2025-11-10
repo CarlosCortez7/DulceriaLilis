@@ -4,13 +4,10 @@ from productos.models import Producto
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.db.models import Sum, F, ExpressionWrapper
-from django.core.validators import MinValueValidator  # <--- EDITADO: Importar validador
-from decimal import Decimal                      # <--- EDITADO: Importar Decimal
-
-# --- Tus modelos existentes ---
+from django.core.validators import MinValueValidator  
+from decimal import Decimal                      
 
 class Proveedor(models.Model):
-    # ... (Tu modelo Proveedor existente, está perfecto) ...
     razon_social = models.CharField(max_length=100)
     nombre_fantasia = models.CharField(max_length=255, blank=True, null=True)
     rut_nif = models.CharField(max_length=20, unique=True)
@@ -36,23 +33,22 @@ class Proveedor(models.Model):
 
 
 class ProductoProveedor(models.Model):
-    # ... (Tu modelo ProductoProveedor existente) ...
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE, related_name='productos_proveedor')
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='proveedores_producto')
     
     costo = models.DecimalField(
         max_digits=18, 
         decimal_places=6,
-        validators=[MinValueValidator(Decimal('0.000001'))]  # <--- EDITADO
+        validators=[MinValueValidator(Decimal('0.000001'))]
     ) 
     
-    lead_time_dias = models.IntegerField(default=7, validators=[MinValueValidator(0)]) # <--- EDITADO (Asumo que 0 días es válido)
+    lead_time_dias = models.IntegerField(default=7, validators=[MinValueValidator(0)])
     
     min_lote = models.DecimalField(
         max_digits=18, 
         decimal_places=6, 
         default=1,
-        validators=[MinValueValidator(Decimal('0.000001'))]  # <--- EDITADO
+        validators=[MinValueValidator(Decimal('0.000001'))]
     )
     
     descuento_pct = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
@@ -65,9 +61,6 @@ class ProductoProveedor(models.Model):
 
     def __str__(self):
         return f"{self.proveedor.razon_social} - {self.producto.nombre}"
-
-# --- FIN de modelos existentes ---
-
 
 class OrdenCompra(models.Model):
     ESTADOS = [
@@ -141,11 +134,9 @@ class DetalleOrdenCompra(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        # Agregué una comprobación por si el producto fue eliminado (SET_NULL)
         nombre_producto = self.producto.nombre if self.producto else "Producto Eliminado"
-        return f"Detalle {self.id} de Orden {self.orden.id} - {nombre_producto}" # <--- EDITADO (Más seguro)
+        return f"Detalle {self.id} de Orden {self.orden.id} - {nombre_producto}"
 
-# --- SIGNALS (Están perfectos) ---
 @receiver(post_save, sender=DetalleOrdenCompra)
 def actualizar_total_oc_guardar(sender, instance, **kwargs):
     instance.orden.actualizar_total()

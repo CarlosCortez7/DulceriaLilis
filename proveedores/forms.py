@@ -5,13 +5,11 @@ from productos.models import Producto # <-- Importar Producto
 # --- FORMULARIOS DE PROVEEDOR (Existentes) ---
 class ProveedorForm(forms.ModelForm):
 
-    # <--- EDITADO: Cambiado a EmailField
     email = forms.EmailField(
         label="Email General",
         widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@proveedor.cl'})
     )
     
-    # <--- EDITADO: Cambiado a EmailField y requerido=False
     contacto_principal_email = forms.EmailField(
         label="Email Contacto",
         required=False,
@@ -44,7 +42,6 @@ class ProveedorForm(forms.ModelForm):
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Notas u observaciones adicionales'}),
         }
     
-    # Esta validación está perfecta, se queda.
     def clean_rut_nif(self):
         rut_nif = self.cleaned_data.get('rut_nif', '').strip()
         if not rut_nif:
@@ -97,7 +94,7 @@ class ProductoProveedorForm(forms.ModelForm):
 # --- FIN FORMULARIOS DE PROVEEDOR ---
 
 
-# --- INICIO MODIFICACIÓN ORDEN DE COMPRA ---
+# --- INICIO ORDEN DE COMPRA ---
 
 class OrdenCompraForm(forms.ModelForm):
     class Meta:
@@ -124,7 +121,7 @@ class OrdenCompraForm(forms.ModelForm):
         # Si estamos editando (la instancia ya existe),
         if self.instance.pk:
             del self.fields['proveedor']
-        # <--- EDITADO: Fin de la corrección
+
 
 
 # --- FORMULARIO 'DetalleOrdenCompraForm' ---
@@ -139,13 +136,10 @@ class DetalleOrdenCompraForm(forms.ModelForm):
 
     class Meta:
         model = DetalleOrdenCompra
-
-        # e impedía que la vista detectara productos duplicados.
         fields = [
             'cantidad',
             'precio_unitario'
         ]
-        # <--- EDITADO: Fin de la corrección
         widgets = {
             'cantidad': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Cantidad', 'step': '0.01'}),
             'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Precio (auto)', 'step': '0.000001', 'id': 'id_precio_unitario'}),
