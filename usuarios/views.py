@@ -129,7 +129,7 @@ def modulo_usuarios(request):
             messages.success(request, f'Usuario "{user.username}" creado correctamente.')
             return redirect('modulo_usuarios')
         else:
-             messages.error(request, 'Error al crear el usuario. Revisa el formulario.')
+            messages.error(request, 'Error al crear el usuario. Revisa el formulario.')
     else:
         form = UsuarioCreationForm()
 
@@ -157,20 +157,23 @@ def modulo_usuarios(request):
         'ROL_CHOICES': ROL_CHOICES,
         'edit_mode': False,
         'per_page': per_page, # Pasar el valor al contexto
-        'sort_by': sort_by,  # Pasar el valor al contexto
+        'sort_by': sort_by,   # Pasar el valor al contexto
     }
 
     # Respuesta Diferenciada (Normal vs AJAX)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         # Si es AJAX (desde el filtro), renderiza SOLO la tabla parcial
         table_html = render_to_string(
-            template_name="usuarios/_user_list_partial.html", # Ruta correcta para la plantilla parcial
-            context=context # Pasamos el contexto completo que ya tiene page_obj
+            template_name="usuarios/_user_list_partial.html", 
+            context=context,
+            request=request 
         )
         pagination_html = render_to_string(
             template_name="usuarios/_user_pagination.html",
-            context=context
+            context=context,
+            request=request  
         )
+        
         # Devolver el HTML como parte de una respuesta JSON
         data_dict = {
             "html_from_view": table_html,
@@ -179,7 +182,6 @@ def modulo_usuarios(request):
         return JsonResponse(data=data_dict, safe=False)
     else:
         # Si es una petición normal (GET o POST con error), renderiza la página completa
-        # Asegúrate de que el nombre del template sea el correcto
         return render(request, 'usuarios/modulo_usuarios.html', context)
 
 @login_required # Proteger la vista
