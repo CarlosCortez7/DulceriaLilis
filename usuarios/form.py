@@ -45,10 +45,10 @@ class CustomLoginForm(AuthenticationForm):
         return self.cleaned_data
 
 
-class UsuarioCreationForm(UserCreationForm):
+class UsuarioCreationForm(UserCreationForm): #Un formulario interno que permite a los administradores crear cuentas con roles específicos.
     class Meta:
-        model = Usuario
-        fields = ['username', 'email', 'telefono', 'rol', 'password1', 'password2']
+        model = Usuario #La vista modulo_usuarios presenta una tabla completa de todos los usuarios registrados.
+        fields = ['username', 'email', 'telefono', 'rol', 'password1', 'password2'] #búsqueda, filtrado por rol y estado.
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

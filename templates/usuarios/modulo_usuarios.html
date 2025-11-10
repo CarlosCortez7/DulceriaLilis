@@ -212,6 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let debounceTimer;
 
     // --- Función de Fetch (AJAX) ---
+    // PUNTO CLAVE 1: FUNCIÓN CENTRAL DE AJAX - Esta función construye la URL con los filtros y realiza la petición fetch.
     function fetchFilteredUsers(url = null) {
         let fetchUrl = url;
         const params = new URLSearchParams({
@@ -226,8 +227,10 @@ document.addEventListener('DOMContentLoaded', function() {
             fetchUrl = `${filterUrl}?${params.toString()}`;
         }
         
+        // Actualiza el botón de exportar para que use los mismos filtros.
         exportBtn.href = `{% url 'exportar_excel_usuarios' %}?${params.toString()}`;
         
+        // Se realiza la petición asíncrona.
         fetch(fetchUrl, {
             method: 'GET',
             headers: {
@@ -237,10 +240,11 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            // PUNTO CLAVE 2: ACTUALIZACIÓN PARCIAL DEL DOM - Se actualiza solo el cuerpo de la tabla y la paginación, no la página completa.
             userTableBody.innerHTML = data.html_from_view;
             paginationContainer.innerHTML = data.pagination_html;
-            // Volver a asignar listeners a los nuevos enlaces de paginación
-            attachPaginationListeners(); 
+            
+            attachPaginationListeners(); // Se vuelven a asignar los listeners a los nuevos enlaces de paginación.
         })
         .catch(error => {
             console.error('Error al filtrar usuarios:', error);
@@ -248,6 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Listeners de Filtros y Búsqueda ---
+    // Se usa un 'debounce' para no enviar peticiones en cada tecla, sino esperar 300ms.
     searchInput.addEventListener('input', () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
@@ -256,6 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function handleFilterChange() {
+        // Al cambiar un filtro, se resetea la página a 1 y se guardan las preferencias.
         sessionStorage.removeItem('userListPage'); 
         sessionStorage.setItem('userListPerPage', perPageSelect.value);
         sessionStorage.setItem('userListSortBy', sortBySelect.value); 
@@ -268,6 +274,7 @@ document.addEventListener('DOMContentLoaded', function() {
     sortBySelect.addEventListener('change', handleFilterChange);
 
     // --- Función para Paginación AJAX ---
+    // Esta función asigna los listeners a los links de paginación para que también funcionen con AJAX.
     function attachPaginationListeners() {
         document.querySelectorAll('#user-pagination-container .pagination a').forEach(link => {
             if (link.dataset.hasListener !== 'true') {
@@ -285,10 +292,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ----- ¡AQUÍ ESTÁ LA SOLUCIÓN! -----
-    // Usamos delegación de eventos en un contenedor principal
-    // para que funcione después de las recargas de AJAX.
-    
+    // PUNTO CLAVE 3: DELEGACIÓN DE EVENTOS - Se asigna un solo listener al contenedor principal.
+    // Esto permite que los botones de "editar" y "eliminar" funcionen incluso si se recargan con AJAX.
     const mainContainer = document.querySelector('.main-container');
 
     mainContainer.addEventListener('click', function(e) {
@@ -296,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // --- MANEJO DE EDICIÓN (botón .btn-editar) ---
         const editButton = e.target.closest('.btn-editar');
         if (editButton) {
-            e.preventDefault(); // Prevenir la navegación del link <a>
+            e.preventDefault(); // Se previene la navegación inmediata.
             const url = editButton.getAttribute("href");
             const username = editButton.closest("tr").querySelector("td:first-child").innerText;
 
@@ -311,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: "Cancelar"
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = url; // Redirigir si se confirma
+                    window.location.href = url; // Se redirige solo si el usuario confirma.
                 }
             });
         }
@@ -319,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // --- MANEJO DE ELIMINACIÓN (botón .btn-eliminar) ---
         const deleteButton = e.target.closest('.btn-eliminar');
         if (deleteButton) {
-            e.preventDefault(); // Prevenir el submit inmediato del formulario
+            e.preventDefault(); // Se previene el envío del formulario.
             
             const form = deleteButton.closest("form.form-eliminar");
             const username = deleteButton.closest("tr").querySelector("td:first-child").innerText;
@@ -335,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: "Cancelar"
             }).then((result) => {
                 if (result.isConfirmed) {
-                    form.submit(); // Enviar el formulario <form> si se confirma
+                    form.submit(); // Se envía el formulario solo si el usuario confirma.
                 }
             });
         }
@@ -344,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Carga inicial de datos ---
     attachPaginationListeners(); // Asignar listeners a la paginación inicial
 
-    // Restaurar valores guardados de sessionStorage
+    // PUNTO CLAVE 4: PERSISTENCIA DE ESTADO - Se usa sessionStorage para recordar los filtros del usuario entre recargas.
     const savedPerPage = sessionStorage.getItem('userListPerPage');
     if (savedPerPage) {
         perPageSelect.value = savedPerPage;

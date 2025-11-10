@@ -17,7 +17,7 @@ def avatar_upload_path(instance, filename):
     return f'avatars/user_{instance.id}/{filename}'
 
 
-class Usuario(AbstractUser):
+class Usuario(AbstractUser): #modelo Usuario personalizado.
     email = models.EmailField(unique=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     rol = models.CharField(max_length=50, choices=ROL_CHOICES)

@@ -78,15 +78,16 @@ def crear_nueva_contrasena(request):
 
 @login_required
 def modulo_usuarios(request):
-    # --- Lógica de Filtrado ---
+    # PUNTO CLAVE 1: FILTRADO Y BÚSQUEDA - Se obtienen los parámetros de la URL (GET).
     query = request.GET.get('q', '')
     rol_filtro = request.GET.get('rol_filtro', '')
     estado_filtro = request.GET.get('estado_filtro', '')
-    sort_by = request.GET.get('sort_by', '') # Nuevo: obtener parámetro de ordenamiento
-    per_page = int(request.GET.get('per_page', 5)) # Nuevo: obtener registros por página, default 5
+    sort_by = request.GET.get('sort_by', '')
+    per_page = int(request.GET.get('per_page', 5))
     usuarios = Usuario.objects.all()
 
     # Aplicar filtro de búsqueda
+    # Se usan objetos Q para construir una consulta OR (username O email O etc.).
     if query:
         usuarios = usuarios.filter(
             Q(username__icontains=query) | Q(email__icontains=query) |
@@ -103,7 +104,7 @@ def modulo_usuarios(request):
     elif estado_filtro == 'inactivo':
         usuarios = usuarios.filter(is_active=False)
     
-    # --- Lógica de Ordenamiento ---
+    # PUNTO CLAVE 2: ORDENAMIENTO DINÁMICO - Un diccionario mapea los valores del frontend a campos del modelo.
     sort_mapping = {
         'username_asc': 'username',
         'username_desc': '-username',
@@ -117,11 +118,10 @@ def modulo_usuarios(request):
         'date_joined_asc': 'date_joined',   # Más antiguo primero
     }
     
-    order_field = sort_mapping.get(sort_by, 'username') # Por defecto, ordenar por username
+    order_field = sort_mapping.get(sort_by, 'username') # Si no se especifica, se ordena por username.
     usuarios = usuarios.order_by(order_field)
 
-    # --- Lógica de Formulario Agregar ---
-    # Se maneja el POST aquí para agregar nuevos usuarios
+    # PUNTO CLAVE 3: MANEJO DE POST (CREACIÓN) - Si la petición es POST, se procesa el formulario de creación.
     if request.method == 'POST':
         form = UsuarioCreationForm(request.POST)
         if form.is_valid():
@@ -133,8 +133,8 @@ def modulo_usuarios(request):
     else:
         form = UsuarioCreationForm()
 
-    # --- Lógica de Paginación ---
-    paginator = Paginator(usuarios, per_page) # Usar el valor dinámico
+    # PUNTO CLAVE 4: PAGINACIÓN - Se utiliza el Paginator de Django para dividir los resultados.
+    paginator = Paginator(usuarios, per_page)
     page_number = request.GET.get('page')
 
     try:
@@ -144,7 +144,7 @@ def modulo_usuarios(request):
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
 
-    # Conservar parámetros de búsqueda en la paginación
+    # Se conservan los parámetros de búsqueda para que la paginación funcione con los filtros aplicados.
     params = request.GET.copy()
     params.pop('page', None)
     querystring = params.urlencode()
@@ -160,9 +160,9 @@ def modulo_usuarios(request):
         'sort_by': sort_by,   # Pasar el valor al contexto
     }
 
-    # Respuesta Diferenciada (Normal vs AJAX)
+    # PUNTO CLAVE 5: RESPUESTA AJAX - Se comprueba si la petición viene de JavaScript (AJAX).
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # Si es AJAX (desde el filtro), renderiza SOLO la tabla parcial
+        # Si es AJAX, se renderizan solo los fragmentos HTML de la tabla y la paginación.
         table_html = render_to_string(
             template_name="usuarios/_user_list_partial.html", 
             context=context,
@@ -174,14 +174,14 @@ def modulo_usuarios(request):
             request=request  
         )
         
-        # Devolver el HTML como parte de una respuesta JSON
+        # Se devuelven los fragmentos HTML en una respuesta JSON para que el frontend los inserte en el DOM.
         data_dict = {
             "html_from_view": table_html,
             "pagination_html": pagination_html
         }
         return JsonResponse(data=data_dict, safe=False)
     else:
-        # Si es una petición normal (GET o POST con error), renderiza la página completa
+        # Si es una petición normal, se renderiza la página completa.
         return render(request, 'usuarios/modulo_usuarios.html', context)
 
 @login_required # Proteger la vista
@@ -189,11 +189,12 @@ def editar_usuario(request, user_id):
     """
     Maneja la edición de un usuario existente. Renderiza la misma plantilla.
     """
+    # 1. Se obtiene el usuario a editar.
     usuario_a_editar = get_object_or_404(Usuario, id=user_id)
 
     if request.method == 'POST':
-        # Usar UsuarioChangeForm para editar
-        form = UsuarioChangeForm(request.POST, instance=usuario_a_editar)
+        # 2. Al ser POST, se instancia el formulario con los datos enviados y la instancia a editar.
+        form = UsuarioChangeForm(request.POST, instance=usuario_a_editar) 
         if form.is_valid():
             form.save()
             messages.success(request, f'Usuario "{usuario_a_editar.username}" actualizado correctamente.')
@@ -202,18 +203,18 @@ def editar_usuario(request, user_id):
             messages.error(request, 'Error al actualizar el usuario. Revisa el formulario.')
             # Si hay error, el 'form' con errores se pasará al contexto abajo
     else:
-        # Si es GET, muestra el formulario con los datos del usuario
+        # 3. Si es GET, se muestra el formulario pre-rellenado con los datos del usuario.
         form = UsuarioChangeForm(instance=usuario_a_editar)
 
     # Siempre necesitamos la lista completa de usuarios para la tabla
     todos_los_usuarios = Usuario.objects.all().order_by('username')
 
     context = {
-        'form': form, # Formulario (relleno con datos o con errores)
-        'usuario_editado': usuario_a_editar, # El usuario específico que se está editando
-        'edit_mode': True, # Bandera para la plantilla
-        'usuarios': todos_los_usuarios, # Lista completa para la tabla
-        'ROL_CHOICES': ROL_CHOICES # Necesario si el form se muestra en la misma página
+        'form': form,
+        'usuario_editado': usuario_a_editar,
+        'edit_mode': True, # Se pasa una bandera para que la plantilla sepa que está en modo edición.
+        'usuarios': todos_los_usuarios,
+        'ROL_CHOICES': ROL_CHOICES
     }
     # Renderizar la MISMA plantilla que modulo_usuarios
     return render(request, 'usuarios/modulo_usuarios.html', context)
@@ -224,7 +225,7 @@ def eliminar_usuario(request, user_id):
     """
     Elimina un usuario específico. Requiere método POST.
     """
-    # Evitar que un usuario se elimine a sí mismo
+    # PUNTO CLAVE DE SEGURIDAD: Evitar que un usuario se elimine a sí mismo.
     if request.user.id == user_id:
         messages.error(request, "No puedes eliminar tu propia cuenta.")
         return redirect('modulo_usuarios')
@@ -232,11 +233,13 @@ def eliminar_usuario(request, user_id):
     usuario_a_eliminar = get_object_or_404(Usuario, id=user_id)
 
     if request.method == 'POST':
+        # La acción de eliminar solo se ejecuta si el método es POST.
         username_eliminado = usuario_a_eliminar.username
         usuario_a_eliminar.delete()
         messages.success(request, f'Usuario "{username_eliminado}" eliminado correctamente.')
         return redirect('modulo_usuarios')
     else:
+        # Si se intenta acceder por GET, se muestra una advertencia.
         messages.warning(request, "La acción de eliminar debe hacerse mediante POST.")
         return redirect('modulo_usuarios')
 
@@ -245,7 +248,7 @@ def exportar_excel_usuarios(request):
     """
     Genera un archivo Excel con la lista de usuarios, aplicando los filtros actuales.
     """
-    # 1. Replicar la lógica de filtrado de la vista principal
+    # PASO 1: Replicar la misma lógica de filtrado de la vista principal para que el Excel coincida con lo que ve el usuario.
     query = request.GET.get('q', '')
     rol_filtro = request.GET.get('rol_filtro', '')
     estado_filtro = request.GET.get('estado_filtro', '')
@@ -265,16 +268,16 @@ def exportar_excel_usuarios(request):
     
     usuarios = usuarios.order_by('username')
 
-    # 2. Crear el libro de Excel
+    # PASO 2: Crear el libro de Excel en memoria usando openpyxl.
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Usuarios"
 
-    # Escribir encabezados
+    # Se escriben los encabezados de las columnas.
     headers = ["ID", "Username", "Email", "Nombre", "Apellido", "Rol", "Estado", "Último Acceso"]
     ws.append(headers)
 
-    # Escribir datos de cada usuario
+    # Se itera sobre los usuarios filtrados y se añade cada uno como una fila.
     for usuario in usuarios:
         ws.append([
             usuario.id, usuario.username, usuario.email, usuario.first_name, usuario.last_name,
@@ -282,7 +285,7 @@ def exportar_excel_usuarios(request):
             usuario.last_login.strftime('%Y-%m-%d %H:%M:%S') if usuario.last_login else "Nunca"
         ])
 
-    # 3. Configurar la respuesta HTTP para descargar el archivo
+    # PASO 3: Configurar la respuesta HTTP para que el navegador la interprete como un archivo descargable.
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=lista_usuarios.xlsx'
     wb.save(response)
@@ -294,7 +297,8 @@ def perfil_usuario(request):
     user = request.user
 
     if request.method == 'POST':
-        if 'actualizar_imagen' in request.POST:  # <- nombre del botón del form de imagen
+        # PUNTO CLAVE: MANEJO DE MÚLTIPLES FORMULARIOS - Se identifica qué formulario se envió por el nombre del botón 'submit'.
+        if 'actualizar_imagen' in request.POST:
             avatar_form = AvatarForm(request.POST, request.FILES, instance=user)
             perfil_form = UsuarioPerfilForm(instance=user)
             password_form = CustomPasswordChangeForm(user)

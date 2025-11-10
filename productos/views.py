@@ -125,6 +125,7 @@ def cart_detail(request):
     return render(request, 'productos/cart_detail.html', {'cart_items': cart_items, 'total_general': total_general})
 
 def modulo_productos(request):
+    # 1. OBTENER DATOS: Se obtienen todos los productos y se precargan las categorías para optimizar consultas.
     productos = Producto.objects.all().select_related('categoria')
 
     nombre = request.GET.get('nombre', '').strip()
@@ -132,10 +133,12 @@ def modulo_productos(request):
     precio_min = request.GET.get('precio', '').strip()
 
     if nombre:
+        # 2. FILTRADO: Se aplican filtros dinámicamente según los parámetros GET.
         productos = productos.filter(nombre__icontains=nombre)
     if categoria_id:
         productos = productos.filter(categoria_id=categoria_id)
     if precio_min:
+        # Se usa un try-except para evitar errores si el valor de precio no es un número válido.
         try:
             productos = productos.filter(precio_venta__gte=float(precio_min))
         except ValueError:
@@ -143,6 +146,7 @@ def modulo_productos(request):
 
     productos = productos.order_by('nombre')
 
+    # 3. PAGINACIÓN: Se utiliza el Paginator de Django para dividir los resultados en páginas.
     paginator = Paginator(productos, 5)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -150,6 +154,7 @@ def modulo_productos(request):
     categorias = Categoria.objects.all()
     form = ProductoForm()
 
+    # 4. CONTEXTO: Se prepara el contexto para la plantilla.
     context = {
         'productos': page_obj,
         'categorias': categorias,
@@ -160,13 +165,11 @@ def modulo_productos(request):
         'precio_min': precio_min,
     }
 
+    # 5. RESPUESTA AJAX: Si la petición es AJAX, se renderiza solo el fragmento de la tabla y se devuelve como JSON.
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         html = render_to_string('productos/_product_list_partial.html', context, request=request)
         return JsonResponse({'html_from_view': html})
-
     return render(request, 'productos/modulo_productos.html', context)
-
-
 
 @login_required
 @user_passes_test(solo_inventario, login_url='/usuarios/sin_permiso/')
@@ -176,12 +179,12 @@ def modulo_inventario(request):
     actualizar el stock del producto y mostrar el historial con resumen diario.
     """
 
-    # === 🔹 Detectar si el usuario solo puede ver ===
+    # PUNTO CLAVE 1: CONTROL DE ROL - Se detecta si el usuario tiene un rol de "solo lectura".
     solo_lectura = request.user.rol == "finanzas"
 
     # --- POST: Registrar movimiento ---
     if request.method == 'POST':
-        # ⚠️ Si está en modo solo lectura, no puede registrar
+        # Si está en modo solo lectura, se bloquea la acción de registrar.
         if solo_lectura:
             messages.warning(request, "No tienes permisos para registrar movimientos (modo solo lectura).")
             return redirect('modulo_inventario')
@@ -203,7 +206,7 @@ def modulo_inventario(request):
             movimiento.producto = producto
             movimiento.usuario = request.user if request.user.is_authenticated else None
 
-            # --- Lógica de actualización de stock ---
+            # PUNTO CLAVE 2: LÓGICA DE NEGOCIO - Se actualiza el stock del producto según el tipo de movimiento.
             if tipo == 'INGRESO':
                 producto.stock_actual += cantidad
                 movimiento.save()
@@ -212,6 +215,7 @@ def modulo_inventario(request):
 
             elif tipo == 'SALIDA':
                 if producto.stock_actual < cantidad:
+                    # Validación de stock para evitar negativos.
                     messages.error(request, f" Stock insuficiente para '{producto.nombre}'. Stock actual: {producto.stock_actual}.")
                     return redirect('modulo_inventario')
                 producto.stock_actual -= cantidad
@@ -234,7 +238,7 @@ def modulo_inventario(request):
     # --- GET: Carga de página ---
     form = MovimientoInventarioForm()
 
-    # --- Tarjetas de resumen ---
+    # PUNTO CLAVE 3: AGREGACIONES - Se usan funciones de agregación de Django para calcular resúmenes.
     today = timezone.now().date()
     movimientos_hoy = MovimientoInventario.objects.filter(fecha_movimiento__date=today).count()
     stock_total = Producto.objects.aggregate(total=Sum('stock_actual'))['total'] or 0
@@ -261,7 +265,7 @@ def modulo_inventario(request):
             'stock_total': stock_total,
             'productos_unicos': productos_unicos,
         },
-        'solo_lectura': solo_lectura,  # 👈 importante
+        'solo_lectura': solo_lectura,  # Se pasa la bandera al template para deshabilitar controles.
     }
 
     return render(request, 'productos/inventario.html', context)
@@ -396,12 +400,14 @@ def editar_producto(request, product_id):
     Maneja la edición. Muestra el formulario RELLENO y guarda los cambios.
     Renderiza la MISMA plantilla que modulo_productos.
     """
+    # 1. OBTENER OBJETO: Se obtiene el producto a editar o se devuelve un 404 si no existe.
     producto = get_object_or_404(Producto, id=product_id)
+    # 2. INSTANCIAR FORMULARIO: Se crea una instancia del formulario con los datos del producto.
     form = ProductoForm(request.POST or None, request.FILES or None, instance=producto)
 
     if request.method == 'POST':
         if form.is_valid():
-            form.save()
+            form.save() # Guarda los cambios en la base de datos.
             messages.success(request, f'Producto "{producto.nombre}" actualizado correctamente.')
             return redirect('modulo_productos')
         else:
@@ -418,10 +424,10 @@ def editar_producto(request, product_id):
         'producto': producto, # El producto que se está editando (útil para el título, etc.)
         'categorias': categorias,
         'MEDIDA_CHOICES': MEDIDA_CHOICES,
-        'edit_mode': True, # Indicar que SÍ estamos editando
+        'edit_mode': True, # Bandera para que la plantilla sepa que estamos en modo edición.
         'productos': todos_los_productos # Pasar la lista para la tabla de abajo
     }
-    # Renderizar la MISMA plantilla
+    # 4. REUTILIZAR PLANTILLA: Se renderiza la misma plantilla del listado, pero con el contexto de edición.
     return render(request, 'productos/modulo_productos.html', context)
 
 @login_required
@@ -578,4 +584,3 @@ def autocomplete_sku(request):
             'value': p.sku
         })
     return JsonResponse(results, safe=False)
-
