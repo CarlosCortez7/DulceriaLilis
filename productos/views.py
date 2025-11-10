@@ -341,13 +341,26 @@ def editar_movimiento(request, id):
 
     if request.method == 'POST':
         if form.is_valid():
-            form.save()
+            movimiento = form.save(commit=False)
+            sku = form.cleaned_data.get('sku_producto')  # El SKU ingresado por el usuario
+            try:
+                producto = Producto.objects.get(sku=sku)
+                movimiento.producto = producto
+            except Producto.DoesNotExist:
+                messages.error(request, f"No existe un producto con el SKU {sku}.")
+                return render(request, 'productos/inventario_editar.html', {'form': form, 'movimiento': movimiento})
+            
+            movimiento.save()
             messages.success(request, "Movimiento actualizado correctamente.")
             return redirect('modulo_inventario')
         else:
             messages.error(request, "Error al actualizar el movimiento. Revisa los datos.")
     
+    # Prellenar el SKU actual en el campo de formulario
+    form.fields['sku_producto'].initial = movimiento.producto.sku
+
     return render(request, 'productos/inventario_editar.html', {'form': form, 'movimiento': movimiento})
+
 
 
 @login_required
