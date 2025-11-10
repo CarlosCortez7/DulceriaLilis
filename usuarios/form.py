@@ -1,6 +1,6 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UserChangeForm, PasswordChangeForm
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, UserChangeForm, PasswordChangeForm, UserCreationForm
+from django.contrib.auth import authenticate
 from .models import Usuario
 
 
@@ -20,12 +20,31 @@ class CustomLoginForm(AuthenticationForm):
         })
     )
 
-    def clean_username(self):
+    def clean(self):
         username = self.cleaned_data.get('username')
-        if len(username) < 3:
-            raise forms.ValidationError('El nombre de usuario debe tener al menos 3 caracteres.')
-        return username
-    
+        password = self.cleaned_data.get('password')
+
+        if username and password:
+            # Intentar autenticar primero como si fuera un correo
+            try:
+                user_obj = Usuario.objects.get(email__iexact=username)
+                username = user_obj.username  # reemplazamos por el username real
+            except Usuario.DoesNotExist:
+                pass  # si no existe por email, intenta con username normal
+
+            user = authenticate(self.request, username=username, password=password)
+
+            if user is None:
+                raise forms.ValidationError("Correo o contraseña incorrectos.")
+            if not user.is_active:
+                raise forms.ValidationError("Esta cuenta está desactivada.")
+        else:
+            raise forms.ValidationError("Debes ingresar tus credenciales.")
+
+        self.user_cache = user
+        return self.cleaned_data
+
+
 class UsuarioCreationForm(UserCreationForm):
     class Meta:
         model = Usuario
@@ -41,29 +60,29 @@ class UsuarioCreationForm(UserCreationForm):
         self.fields['password2'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Repetir Contraseña'})
         self.fields['rol'].choices = [choice for choice in self.fields['rol'].choices if choice[0] != 'admin' or choice[0] == 'Administrador']
 
+
 class UsuarioChangeForm(UserChangeForm):
-    # Quitar el campo password para que no se muestre/edite aquí
-    password = None
+    password = None  # No mostrar ni editar la contraseña aquí
 
     class Meta:
         model = Usuario
-        # Incluir los campos que quieres permitir editar
-        # Usamos los campos de AbstractUser + los tuyos propios
-        fields = ['username', 'email', 'first_name', 'last_name',
-                  'telefono', 'rol', 'is_active', # Usar is_active en lugar de 'estado'
-                  'mfa_habilitado', 'observaciones', 'area_unidad',
-                  'is_staff', 'is_superuser', 'groups', 'user_permissions'] # Campos estándar de permisos
+        fields = [
+            'username', 'email', 'first_name', 'last_name',
+            'telefono', 'rol', 'is_active',
+            'mfa_habilitado', 'observaciones', 'area_unidad',
+            'is_staff', 'is_superuser', 'groups', 'user_permissions'
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # (Opcional) Añadir clases de Bootstrap a los campos
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
-                 field.widget.attrs.update({'class': 'form-check-input'})
+                field.widget.attrs.update({'class': 'form-check-input'})
             elif isinstance(field.widget, forms.Select):
-                 field.widget.attrs.update({'class': 'form-select'})
-            elif not isinstance(field.widget, forms.SelectMultiple): # Evitar aplicar a permisos/grupos
-                 field.widget.attrs.update({'class': 'form-control'})
+                field.widget.attrs.update({'class': 'form-select'})
+            elif not isinstance(field.widget, forms.SelectMultiple):
+                field.widget.attrs.update({'class': 'form-control'})
+
 
 class AvatarForm(forms.ModelForm):
     class Meta:
@@ -78,11 +97,10 @@ class AvatarForm(forms.ModelForm):
         if not avatar:
             raise forms.ValidationError("Selecciona una imagen.")
         if avatar.content_type not in ['image/jpeg', 'image/png']:
-            raise forms.ValidationError("Solo JPG o PNG.")
-        if avatar.size > 2 * 1024 * 1024:  # 2 MB
+            raise forms.ValidationError("Solo se permiten imágenes JPG o PNG.")
+        if avatar.size > 2 * 1024 * 1024:
             raise forms.ValidationError("La imagen no debe superar los 2MB.")
         return avatar
-
 
 
 class UsuarioPerfilForm(forms.ModelForm):

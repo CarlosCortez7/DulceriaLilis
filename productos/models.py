@@ -48,7 +48,7 @@ class Producto(models.Model):
     control_por_serie = models.BooleanField(default=False)
 
     # --- Relaciones y Estado ---
-    imagen = models.ImageField(upload_to='productos/', null=True, blank=True, default='productos/default_product.png')
+    imagen = models.ImageField(upload_to='productos/', null=True, blank=True, default='default/default_product.png')
     ficha_tecnica = models.FileField(upload_to='fichas/', null=True, blank=True)
     estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='activo')
 

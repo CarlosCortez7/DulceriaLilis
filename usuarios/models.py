@@ -18,12 +18,16 @@ def avatar_upload_path(instance, filename):
 
 
 class Usuario(AbstractUser):
+    email = models.EmailField(unique=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     rol = models.CharField(max_length=50, choices=ROL_CHOICES)
     area_unidad = models.CharField(max_length=100, blank=True, null=True)
     mfa_habilitado = models.BooleanField(default=False)
     observaciones = models.TextField(blank=True, null=True)
-    avatar = models.ImageField(upload_to='avatars/', default='avatars/default_user.png', blank=True, null=True)  
+    avatar = models.ImageField(upload_to='avatars/', default='avatars/default_user.png', blank=True, null=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
 
     def __str__(self):
         return f"{self.username} ({self.rol})"

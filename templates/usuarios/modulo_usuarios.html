@@ -194,83 +194,86 @@
 </div>
 {% endblock %}
 {% block javascript %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- Selectores de filtros ---
     const searchInput = document.getElementById('q_id');
     const rolSelect = document.getElementById('rol_filtro_id');
     const estadoSelect = document.getElementById('estado_filtro_id');
-    const perPageSelect = document.getElementById('entries_per_page_id'); // Nuevo selector
-    const sortBySelect = document.getElementById('sort_by_id'); // Nuevo selector de ordenamiento
+    const perPageSelect = document.getElementById('entries_per_page_id'); 
+    const sortBySelect = document.getElementById('sort_by_id'); 
     const userTableBody = document.getElementById('user-table-body');
     const exportBtn = document.getElementById('export-excel-btn');
     const paginationContainer = document.getElementById('user-pagination-container');
-    const filterUrl = "{% url 'modulo_usuarios' %}"; // URL base para los filtros
-
+    const filterUrl = "{% url 'modulo_usuarios' %}";
     let debounceTimer;
+
+    // --- Función de Fetch (AJAX) ---
     function fetchFilteredUsers(url = null) {
-        // Construir los parámetros de la URL
         let fetchUrl = url;
         const params = new URLSearchParams({
             q: searchInput.value,
             rol_filtro: rolSelect.value,
             estado_filtro: estadoSelect.value,
-            per_page: perPageSelect.value, // Añadir el nuevo parámetro
-            sort_by: sortBySelect.value // Añadir el nuevo parámetro de ordenamiento
+            per_page: perPageSelect.value, 
+            sort_by: sortBySelect.value 
         });
 
         if (!fetchUrl) {
             fetchUrl = `${filterUrl}?${params.toString()}`;
         }
-        // Actualizar el enlace de exportación
+        
         exportBtn.href = `{% url 'exportar_excel_usuarios' %}?${params.toString()}`;
-        // Hacer la petición Fetch
+        
         fetch(fetchUrl, {
             method: 'GET',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest', // Header para que Django sepa que es AJAX
-                'Accept': 'application/json', // Pedir JSON
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
             }
         })
         .then(response => response.json())
         .then(data => {
-            // Reemplazar el contenido de la tabla y la paginación con el HTML recibido
             userTableBody.innerHTML = data.html_from_view;
-            paginationContainer.innerHTML = data.pagination_html; // Esto se mantiene
-            attachPaginationListeners(); // Volver a asignar listeners a los nuevos enlaces
+            paginationContainer.innerHTML = data.pagination_html;
+            // Volver a asignar listeners a los nuevos enlaces de paginación
+            attachPaginationListeners(); 
         })
         .catch(error => {
             console.error('Error al filtrar usuarios:', error);
-            // Podrías mostrar un mensaje de error al usuario aquí
         });
     }
-    // --- Event Listeners ---
-    // Para el input de búsqueda (con debounce para no saturar)
+
+    // --- Listeners de Filtros y Búsqueda ---
     searchInput.addEventListener('input', () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
             fetchFilteredUsers();
-        }, 300); // Espera 300ms después de dejar de escribir
+        }, 300);
     });
 
-    // Para los selects (al cambiar un filtro, se resetea la página a 1)
     function handleFilterChange() {
-        sessionStorage.removeItem('userListPage'); // Olvidar la página guardada al filtrar
-        sessionStorage.setItem('userListPerPage', perPageSelect.value); // Guardar per_page
-        sessionStorage.setItem('userListSortBy', sortBySelect.value); // Guardar sort_by
+        sessionStorage.removeItem('userListPage'); 
+        sessionStorage.setItem('userListPerPage', perPageSelect.value);
+        sessionStorage.setItem('userListSortBy', sortBySelect.value); 
         fetchFilteredUsers();
     }
+    
     rolSelect.addEventListener('change', handleFilterChange);
     estadoSelect.addEventListener('change', handleFilterChange);
-    perPageSelect.addEventListener('change', handleFilterChange); // Añadir listener al nuevo selector
-    sortBySelect.addEventListener('change', handleFilterChange); // Añadir listener al nuevo selector de ordenamiento
+    perPageSelect.addEventListener('change', handleFilterChange); 
+    sortBySelect.addEventListener('change', handleFilterChange);
 
-    // --- Paginación AJAX ---
+    // --- Función para Paginación AJAX ---
     function attachPaginationListeners() {
         document.querySelectorAll('#user-pagination-container .pagination a').forEach(link => {
             if (link.dataset.hasListener !== 'true') {
                 link.dataset.hasListener = 'true';
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
-                    // Guardar la página en sessionStorage antes de cargarla
                     const url = new URL(this.href);
                     const page = url.searchParams.get('page');
                     if (page) {
@@ -282,76 +285,24 @@
         });
     }
 
-    // Ejecutar al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
-        attachPaginationListeners();
+    // ----- ¡AQUÍ ESTÁ LA SOLUCIÓN! -----
+    // Usamos delegación de eventos en un contenedor principal
+    // para que funcione después de las recargas de AJAX.
+    
+    const mainContainer = document.querySelector('.main-container');
 
-        // Restaurar valores guardados de sessionStorage
-        const savedPerPage = sessionStorage.getItem('userListPerPage');
-        if (savedPerPage) {
-            perPageSelect.value = savedPerPage;
-        }
-        const savedSortBy = sessionStorage.getItem('userListSortBy');
-        if (savedSortBy) {
-            sortBySelect.value = savedSortBy;
-        }
+    mainContainer.addEventListener('click', function(e) {
 
-        // Construir URL inicial con los filtros y ordenamiento actuales (restaurados)
-        const initialParams = new URLSearchParams({
-            q: searchInput.value,
-            rol_filtro: rolSelect.value,
-            estado_filtro: estadoSelect.value,
-            per_page: perPageSelect.value,
-            sort_by: sortBySelect.value
-        });
-
-        // Comprobar si hay una página guardada
-        const savedPage = sessionStorage.getItem('userListPage');
-        if (savedPage && savedPage !== '1') {
-            initialParams.set('page', savedPage);
-        }
-        fetchFilteredUsers(`${filterUrl}?${initialParams.toString()}`);
-    });
-
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-
-    // --- Confirmación de eliminación ---
-    document.addEventListener("click", function(e) {
-        if (e.target && e.target.classList.contains("btn-eliminar")) {
-            e.preventDefault();
-            const url = e.target.getAttribute("href");
+        // --- MANEJO DE EDICIÓN (botón .btn-editar) ---
+        const editButton = e.target.closest('.btn-editar');
+        if (editButton) {
+            e.preventDefault(); // Prevenir la navegación del link <a>
+            const url = editButton.getAttribute("href");
+            const username = editButton.closest("tr").querySelector("td:first-child").innerText;
 
             Swal.fire({
-                title: "¿Estás seguro?",
-                text: "¡No podrás revertir esta acción!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Sí, eliminar",
-                cancelButtonText: "Cancelar"
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = url;
-                }
-            });
-        }
-    });
-
-    // --- Confirmación de edición ---
-    document.addEventListener("click", function(e) {
-        if (e.target && e.target.classList.contains("btn-editar")) {
-            e.preventDefault();
-            const url = e.target.getAttribute("href");
-
-            Swal.fire({
-                title: "¿Deseas editar este usuario?",
-                text: "Serás redirigido al formulario de edición.",
+                title: "Editar usuario",
+                text: `¿Deseas editar los datos de "${username}"?`,
                 icon: "question",
                 showCancelButton: true,
                 confirmButtonColor: "#3085d6",
@@ -360,12 +311,64 @@ document.addEventListener("DOMContentLoaded", function() {
                 cancelButtonText: "Cancelar"
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = url;
+                    window.location.href = url; // Redirigir si se confirma
+                }
+            });
+        }
+
+        // --- MANEJO DE ELIMINACIÓN (botón .btn-eliminar) ---
+        const deleteButton = e.target.closest('.btn-eliminar');
+        if (deleteButton) {
+            e.preventDefault(); // Prevenir el submit inmediato del formulario
+            
+            const form = deleteButton.closest("form.form-eliminar");
+            const username = deleteButton.closest("tr").querySelector("td:first-child").innerText;
+
+            Swal.fire({
+                title: "¿Estás seguro?",
+                text: `Eliminarás al usuario "${username}". Esta acción no se puede revertir.`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#6c757d",
+                confirmButtonText: "Sí, eliminar",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit(); // Enviar el formulario <form> si se confirma
                 }
             });
         }
     });
 
+    // --- Carga inicial de datos ---
+    attachPaginationListeners(); // Asignar listeners a la paginación inicial
+
+    // Restaurar valores guardados de sessionStorage
+    const savedPerPage = sessionStorage.getItem('userListPerPage');
+    if (savedPerPage) {
+        perPageSelect.value = savedPerPage;
+    }
+    const savedSortBy = sessionStorage.getItem('userListSortBy');
+    if (savedSortBy) {
+        sortBySelect.value = savedSortBy;
+    }
+
+    const initialParams = new URLSearchParams({
+        q: searchInput.value,
+        rol_filtro: rolSelect.value,
+        estado_filtro: estadoSelect.value,
+        per_page: perPageSelect.value,
+        sort_by: sortBySelect.value
+    });
+
+    const savedPage = sessionStorage.getItem('userListPage');
+    if (savedPage && savedPage !== '1') {
+        initialParams.set('page', savedPage);
+    }
+    
+    // Cargar la lista de usuarios al inicio
+    fetchFilteredUsers(`${filterUrl}?${initialParams.toString()}`);
 });
 </script>
 
