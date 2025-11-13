@@ -1,15 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse  # <--- EDITADO: JsonResponse añadido
+from django.http import HttpResponse, JsonResponse 
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required, permission_required # <--- EDITADO: Imports de permisos
+from django.contrib.auth.decorators import login_required, permission_required 
 import openpyxl
 import json
-from openpyxl.styles import Font, Alignment # <--- (Opcional) Para mejorar el Excel
-
-# --- INICIO CORRECCIÓN DE IMPORTACIONES ---
+from openpyxl.styles import Font, Alignment
 from .models import (
     Proveedor, ProductoProveedor, 
     OrdenCompra, DetalleOrdenCompra
@@ -20,14 +18,14 @@ from .forms import (
     OrdenCompraForm, DetalleOrdenCompraForm
 )
 from productos.forms import ProductoForm
-# --- FIN CORRECCIÓN DE IMPORTACIONES ---
+
 
 
 # ------------------------------
 # VISTA PROVEEDORES (LISTAR + CREAR)
 # ------------------------------
-@login_required # <--- EDITADO: Requiere login
-@permission_required('proveedores.view_proveedor', raise_exception=True) # <--- EDITADO: Requiere permiso de "ver"
+@login_required # <--- Requiere login
+@permission_required('proveedores.view_proveedor', raise_exception=True) # <--- Requiere permiso de "ver"
 def modulo_proveedores(request):
     """
     Muestra el formulario de CREACIÓN y la lista de proveedores.
@@ -72,7 +70,7 @@ def modulo_proveedores(request):
         page_obj = paginator.page(paginator.num_pages)
 
     if request.method == 'POST':
-        # --- EDITADO: Chequeo de permiso de "crear" (Req 2) ---
+        # Chequeo de permiso de "crear" (Req 2) ---
         if not request.user.has_perm('proveedores.add_proveedor'):
              messages.error(request, "No tienes permisos para crear proveedores.")
              return redirect('modulo_proveedores')
@@ -95,9 +93,9 @@ def modulo_proveedores(request):
         'query': query,
         'form': form_para_mostrar, 
         'editando': False,
-        'page_size': int(page_size), # <--- EDITADO: Para el select del paginador
-        'sort_by': sort_by,          # <--- EDITADO: Para saber orden actual
-        'direction': direction       # <--- EDITADO: Para saber dirección actual
+        'page_size': int(page_size), # <---  Para el select del paginador
+        'sort_by': sort_by,          # <---  Para saber orden actual
+        'direction': direction       # <---  Para saber dirección actual
     }
     return render(request, 'proveedores/modulo_proveedores.html', context)
 
@@ -106,7 +104,7 @@ def modulo_proveedores(request):
 # VISTA PROVEEDORES (EDICIÓN)
 # ------------------------------
 @login_required # <--- EDITADO
-@permission_required('proveedores.change_proveedor', raise_exception=True) # <--- EDITADO: Requiere permiso de "editar"
+@permission_required('proveedores.change_proveedor', raise_exception=True) # <--- Requiere permiso de "editar"
 def editar_proveedor(request, proveedor_id=None, pk=None):
     """
     Prepara la página de edición para ACTUALIZAR un proveedor.
@@ -119,7 +117,7 @@ def editar_proveedor(request, proveedor_id=None, pk=None):
         if form.is_valid():
             form.save()
             messages.success(request, 'Proveedor actualizado correctamente.')
-            return redirect('editar_proveedor', proveedor_id=id_proveedor)
+            return redirect('editar_proveedor', proveedor_id=id_proveedor) # --- lo mantengo en la misma pagina de editar por ahora
         else:
             messages.error(request, 'Corrige los errores en el formulario.')
             form_para_mostrar = form
@@ -131,12 +129,9 @@ def editar_proveedor(request, proveedor_id=None, pk=None):
     ids_productos_asociados = productos_asociados.values_list('producto__id', flat=True)
     productos_disponibles = Producto.objects.exclude(id__in=ids_productos_asociados).order_by('nombre')
     
-    # --- EDITADO: Creamos DOS instancias del form con prefijos
+    # --- Creamos DOS instancias del form con prefijos
     pp_form_existente = ProductoProveedorForm(prefix="existente")
     pp_form_nuevo = ProductoProveedorForm(prefix="nuevo")
-    # --- FIN EDITADO ---
-    
-    # ... (tu lógica de initial_data_producto está bien) ...
     initial_data_producto = { 'uom_venta': 'unidad', 'factor_conversion': 1, 'impuesto_iva': 19.00, 'stock_actual': 0, 'stock_minimo': 0, 'perishable': False, 'control_por_lote': False, 'control_por_serie': False, 'estado': 'activo' }
     producto_form = ProductoForm(initial=initial_data_producto) 
 
@@ -144,19 +139,17 @@ def editar_proveedor(request, proveedor_id=None, pk=None):
         'titulo_pagina': f'Editando a: {proveedor_a_editar.razon_social}',
         'form': form_para_mostrar, 
         
-        # --- EDITADO: Eliminada la lista duplicada de proveedores ---
+        # --- Eliminada la lista duplicada de proveedores ---
         # (Es confuso tener la lista completa en la pág. de edición)
-        
         'editando': True, 
         'proveedor_a_editar': proveedor_a_editar,
         
         'productos_asociados': productos_asociados,
         'productos_disponibles': productos_disponibles,
         
-        # --- EDITADO: Pasamos los forms con sus nuevos nombres ---
+        # --- Pasamos los forms con sus nuevos nombres ---
         'pp_form_existente': pp_form_existente,
         'pp_form_nuevo': pp_form_nuevo,
-        # --- FIN EDITADO ---
         'producto_form': producto_form
     }
     return render(request, 'proveedores/modulo_proveedores.html', context)
@@ -165,8 +158,8 @@ def editar_proveedor(request, proveedor_id=None, pk=None):
 # ------------------------------
 # VISTAS AUXILIARES (TAB 3 PROVEEDORES)
 # ------------------------------
-@login_required # <--- EDITADO
-@permission_required('proveedores.change_proveedor', raise_exception=True) # <--- EDITADO
+@login_required
+@permission_required('proveedores.change_proveedor', raise_exception=True) 
 @require_POST
 def asociar_producto_proveedor(request, proveedor_id):
     """
@@ -174,21 +167,19 @@ def asociar_producto_proveedor(request, proveedor_id):
     """
     proveedor = get_object_or_404(Proveedor, id=proveedor_id)
     
-    # --- EDITADO: Añadido chequeo de permiso para crear productos ---
+    # --- Añadido chequeo de permiso para crear productos ---
     if 'submit_nuevo' in request.POST and not request.user.has_perm('productos.add_producto'):
         messages.error(request, "No tienes permisos para crear nuevos productos.")
         return redirect('editar_proveedor', proveedor_id=proveedor_id)
 
-    # --- EDITADO: Instanciamos los forms vacíos primero ---
+    # --- Instanciamos los forms vacíos primero ---
     pp_form = None
     producto_form = None
-    # --- FIN EDITADO ---
     
     if 'submit_existente' in request.POST:
-        # --- EDITADO: Instanciamos el form con su prefijo
+        # --- Instanciamos el form con su prefijo
         pp_form = ProductoProveedorForm(request.POST, prefix="existente")
         producto_form = ProductoForm() # No lo usamos aquí
-        # --- FIN EDITADO ---
 
         producto_id = request.POST.get('producto') 
         if not producto_id:
@@ -211,10 +202,9 @@ def asociar_producto_proveedor(request, proveedor_id):
             messages.error(request, f"Error en los datos de costo/lead time: {pp_form.errors.as_text()}")
 
     elif 'submit_nuevo' in request.POST:
-        # --- EDITADO: Instanciamos ambos forms con sus prefijos/datos
+        # --- Instanciamos ambos forms con sus prefijos/datos
         pp_form = ProductoProveedorForm(request.POST, prefix="nuevo")
         producto_form = ProductoForm(request.POST, request.FILES)
-        # --- FIN EDITADO ---
 
         if producto_form.is_valid() and pp_form.is_valid():
             try:
@@ -236,8 +226,8 @@ def asociar_producto_proveedor(request, proveedor_id):
     return redirect('editar_proveedor', proveedor_id=proveedor_id)
 
 
-@login_required # <--- EDITADO
-@permission_required('proveedores.change_proveedor', raise_exception=True) # <--- EDITADO
+@login_required
+@permission_required('proveedores.change_proveedor', raise_exception=True)
 @require_POST
 def desasociar_producto_proveedor(request, asociacion_id):
     """
@@ -258,7 +248,7 @@ def desasociar_producto_proveedor(request, asociacion_id):
 # ELIMINAR PROVEEDOR (Principal)
 # ------------------------------
 @login_required # <--- EDITADO
-@permission_required('proveedores.delete_proveedor', raise_exception=True) # <--- EDITADO: Requiere permiso de "eliminar"
+@permission_required('proveedores.delete_proveedor', raise_exception=True) # <--- Requiere permiso de "eliminar"
 @require_POST
 def eliminar_proveedor(request, proveedor_id=None, pk=None):
     """
@@ -281,8 +271,8 @@ def eliminar_proveedor(request, proveedor_id=None, pk=None):
 # ------------------------------
 # EXPORTAR A EXCEL (PROVEEDORES) (Req 3.v)
 # ------------------------------
-@login_required # <--- EDITADO
-@permission_required('proveedores.view_proveedor', raise_exception=True) # <--- EDITADO
+@login_required
+@permission_required('proveedores.view_proveedor', raise_exception=True) 
 def exportar_excel_proveedores(request):
     """
     Genera un archivo Excel con todos los proveedores.
@@ -344,7 +334,7 @@ def exportar_excel_proveedores(request):
 # ------------------------------------------------------------------
 
 @login_required
-@permission_required('proveedores.view_ordencompra', raise_exception=True) # <--- EDITADO: Permiso de "ver"
+@permission_required('proveedores.view_ordencompra', raise_exception=True) # <---Requiere permiso de "ver"
 def gestion_orden_compra(request, orden_id=None):
     """
     Maneja la lógica para Listar, Crear y Editar órdenes.
@@ -356,7 +346,7 @@ def gestion_orden_compra(request, orden_id=None):
     productos_data_json = "{}" 
 
     if orden_id:
-        # --- EDITADO: Chequeo de permiso de "editar" ---
+        # --- Chequeo de permiso de "editar" ---
         if not request.user.has_perm('proveedores.change_ordencompra'):
             messages.error(request, "No tienes permisos para editar esta orden.")
             return redirect('gestion_orden_compra')
@@ -376,7 +366,7 @@ def gestion_orden_compra(request, orden_id=None):
             # Ya chequeamos permiso de 'change' arriba
             form = OrdenCompraForm(request.POST, instance=orden_a_editar)
         else:
-            # --- EDITADO: Chequeo de permiso de "crear" ---
+            # --- Chequeo de permiso de "crear" ---
             if not request.user.has_perm('proveedores.add_ordencompra'):
                 messages.error(request, "No tienes permisos para crear órdenes.")
                 return redirect('gestion_orden_compra')
@@ -451,15 +441,15 @@ def gestion_orden_compra(request, orden_id=None):
         'detalle_form': detalle_form,
         'productos_data_json': productos_data_json,
         
-        'page_size': int(page_size), # <--- EDITADO
-        'sort_by': sort_by,          # <--- EDITADO
-        'direction': direction       # <--- EDITADO
+        'page_size': int(page_size), 
+        'sort_by': sort_by,         
+        'direction': direction       
     }
     return render(request, 'ordencompra/modulodeordenes.html', context)
 
 
 @login_required
-@permission_required('proveedores.change_ordencompra', raise_exception=True) # <--- EDITADO
+@permission_required('proveedores.change_ordencompra', raise_exception=True) 
 @require_POST
 def agregar_detalle_orden(request, orden_id):
     """
@@ -493,7 +483,6 @@ def agregar_detalle_orden(request, orden_id):
             messages.success(request, f"Producto '{detalle.producto.nombre}' añadido a la orden.")
     
     else:
-        # --- EDITADO: Mejor mensaje de error ---
         # (Los validadores MinValue > 0 que pusimos en models.py
         # mostrarán el error aquí si se envía un 0 o negativo)
         error_msg = f"Error al añadir el producto: {form.errors.as_text()}"
@@ -503,15 +492,13 @@ def agregar_detalle_orden(request, orden_id):
 
 
 @login_required
-@permission_required('proveedores.change_ordencompra', raise_exception=True) # <--- EDITADO
+@permission_required('proveedores.change_ordencompra', raise_exception=True) 
 @require_POST
 def eliminar_detalle_orden(request, detalle_id):
     """
     Elimina un item (Detalle) de una Orden de Compra.
     EDITADO: Devuelve JSON para SweetAlert (Req 3.iv).
     """
-    
-    # --- INICIO DE LA CORRECCIÓN (Bug 2 - Error 500) ---
     # Simplificamos la obtención del objeto y el nombre
     
     try:
@@ -531,11 +518,10 @@ def eliminar_detalle_orden(request, detalle_id):
     except Exception as e:
         # Si algo falla (el delete, el signal, etc.), lo capturamos
         return JsonResponse({'status': 'error', 'message': f"Error al quitar el producto: {e}"}, status=400)
-    # --- FIN DE LA CORRECCIÓN ---
 
 
 @login_required
-@permission_required('proveedores.delete_ordencompra', raise_exception=True) # <--- EDITADO
+@permission_required('proveedores.delete_ordencompra', raise_exception=True) 
 @require_POST
 def eliminar_orden_compra(request, orden_id):
     """
@@ -551,7 +537,7 @@ def eliminar_orden_compra(request, orden_id):
 
 
 # ------------------------------
-# ¡NUEVA VISTA! EXPORTAR ÓRDENES A EXCEL (Req 3.v)
+# EXPORTAR ÓRDENES A EXCEL (Req 3.v)
 # ------------------------------
 @login_required
 @permission_required('proveedores.view_ordencompra', raise_exception=True)
@@ -559,7 +545,7 @@ def exportar_excel_ordenes(request):
     """
     Genera un archivo Excel con todas las Órdenes de Compra.
     """
-    # Usar los mismos filtros que la vista de lista (opcional pero recomendado)
+    # Usar los mismos filtros que la vista de lista
     query = request.GET.get('q', '')
     sort_by = request.GET.get('sort', 'fecha_emision')
     direction = request.GET.get('dir', 'desc')
