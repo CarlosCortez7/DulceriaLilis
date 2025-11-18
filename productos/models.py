@@ -31,8 +31,8 @@ class Producto(models.Model):
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
 
     # --- Unidades y Precios ---
-    uom_compra = models.CharField(max_length=10, choices=MEDIDA_CHOICES, default='unidad')
-    uom_venta = models.CharField(max_length=10, choices=MEDIDA_CHOICES, default='unidad')
+    uom_compra = models.CharField(max_length=10, choices=MEDIDA_CHOICES)
+    uom_venta = models.CharField(max_length=10, choices=MEDIDA_CHOICES)
     factor_conversion = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     precio_venta = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     costo_estandar = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -40,7 +40,7 @@ class Producto(models.Model):
 
     # --- Stock y Control ---
     stock_actual = models.IntegerField(default=0)
-    stock_minimo = models.IntegerField(default=0)
+    stock_minimo = models.IntegerField()
     stock_maximo = models.IntegerField(null=True, blank=True)
     punto_reorden = models.IntegerField(null=True, blank=True)
     perishable = models.BooleanField(default=False)
