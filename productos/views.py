@@ -579,3 +579,48 @@ def autocomplete_sku(request):
         })
     return JsonResponse(results, safe=False)
 
+def exportar_movimientos_excel(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Movimientos"
+
+    # Encabezados completos
+    ws.append([
+        "Fecha Movimiento",
+        "Tipo",
+        "Producto",
+        "SKU",
+        "Cantidad",
+        "Usuario",
+        "Documento Ref.",
+        "Lote",
+        "Serie",
+        "Fecha Vencimiento",
+        "Observaciones"
+    ])
+
+    movimientos = MovimientoInventario.objects.select_related("producto", "usuario").order_by("-fecha_movimiento")
+
+    for m in movimientos:
+        ws.append([
+            m.fecha_movimiento.strftime("%Y-%m-%d %H:%M") if m.fecha_movimiento else "-",
+            m.get_tipo_movimiento_display(),
+            m.producto.nombre,
+            m.producto.sku,
+            m.cantidad,
+            m.usuario.username if m.usuario else "Sistema",
+            m.documento_referencia or "-",
+            m.lote or "-",
+            m.serie or "-",
+            m.fecha_vencimiento.strftime("%Y-%m-%d") if m.fecha_vencimiento else "-",
+            m.observaciones or "-"
+        ])
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename=\"movimientos_completo.xlsx\"'
+
+    wb.save(response)
+    return response
+

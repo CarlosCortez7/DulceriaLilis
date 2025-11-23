@@ -82,6 +82,13 @@
     <div class="card">
         <h5 class="card-header">Historial de Movimientos Recientes</h5>
 
+        <!-- === BOTÓN EXPORTAR EXCEL === -->
+        <div class="text-end mb-3 mt-2">
+            <a href="{% url 'exportar_excel' %}" class="btn btn-success">
+                 Exportar a Excel
+            </a>
+        </div>
+
         <!-- === BUSCADOR Y FILTROS === -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="input-group" style="max-width: 500px;">
@@ -220,20 +227,55 @@ $(window).on('load', function() {
     }
 
     // === CONFIRMAR GUARDADO ===
-    $('#btnGuardar').on('click', function(e) {
+    $('#btnGuardar').on('click', function (e) {
         e.preventDefault();
+
+        const requiredIds = [
+            "id_tipo_movimiento",
+            "id_sku_producto",
+            "id_cantidad",
+            "id_lote",
+            "id_serie",
+            "id_fecha_vencimiento",
+            "id_documento_referencia",
+            "id_observaciones"
+        ];
+
+        let faltantes = [];
+
+        requiredIds.forEach(id => {
+            let campo = document.getElementById(id);
+            if (campo && !campo.value.trim()) {
+                faltantes.push(id.replace("id_", "").replace("_", " "));
+                campo.classList.add("is-invalid");
+            } else if (campo) {
+                campo.classList.remove("is-invalid");
+            }
+        });
+
+        if (faltantes.length > 0) {
+            Swal.fire({
+                title: "Campos incompletos",
+                html: "Debes completar:<br><b>" + faltantes.join("<br>") + "</b>",
+                icon: "warning",
+                confirmButtonText: "Entendido"
+            });
+            return;
+        }
+
         Swal.fire({
             title: '¿Registrar movimiento?',
-            text: '¿Deseas guardar este nuevo movimiento?',
+            text: 'Todos los campos están completos.',
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Sí, guardar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#0d6efd'
-        }).then((result) => {
+        }).then(result => {
             if (result.isConfirmed) $('#formMovimiento').submit();
         });
     });
+
 
     // === SWEETALERT: Confirmar Eliminación ===
     window.confirmarEliminacion = function(id, nombre) {
@@ -336,4 +378,56 @@ $(window).on('load', function() {
     {% endif %}
 });
 </script>
+
+<!-- ===================================================== -->
+<!-- 🔄 SISTEMA DE CONTINUIDAD DEL FORMULARIO              -->
+<!-- ===================================================== -->
+<script>
+// === Guardar tab activa ===
+document.querySelectorAll('#movementTab .nav-link').forEach(tab => {
+    tab.addEventListener('click', () => {
+        localStorage.setItem("inv_tab_activa", tab.dataset.bsTarget);
+    });
+});
+
+// Restaurar tab activa
+document.addEventListener("DOMContentLoaded", () => {
+    const lastTab = localStorage.getItem("inv_tab_activa");
+    if (lastTab) {
+        const tabBtn = document.querySelector(`[data-bs-target="${lastTab}"]`);
+        if (tabBtn) new bootstrap.Tab(tabBtn).show();
+    }
+});
+
+// Campos del formulario que mantendrán su valor
+const campos = [
+    "id_tipo_movimiento",
+    "id_sku_producto",
+    "id_cantidad",
+    "id_lote",
+    "id_serie",
+    "id_fecha_vencimiento",
+    "id_documento_referencia",
+    "id_observaciones"
+];
+
+campos.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const saved = localStorage.getItem("inv_" + id);
+    if (saved !== null) el.value = saved;
+
+    el.addEventListener("input", () => {
+        localStorage.setItem("inv_" + id, el.value);
+    });
+});
+
+// Limpiar continuidad
+document.querySelector('button[type="reset"]').addEventListener("click", () => {
+    campos.forEach(id => localStorage.removeItem("inv_" + id));
+    localStorage.removeItem("inv_tab_activa");
+});
+</script>
+
 {% endblock %}
