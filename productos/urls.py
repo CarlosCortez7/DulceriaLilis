@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from productos.views import (agregar_producto, add_to_cart, remove_from_cart, cart_detail, modulo_productos, eliminar_producto, editar_producto, modulo_inventario, exportar_excel_productos)
+from productos.views import (agregar_producto, add_to_cart, remove_from_cart, cart_detail, modulo_productos, eliminar_producto, editar_producto, modulo_inventario, exportar_excel_productos, exportar_movimientos_excel)
 
 urlpatterns = [
     path('agregar/', views.agregar_producto, name='agregar_producto'),
@@ -19,11 +19,14 @@ urlpatterns = [
     path('productos/exportar/', exportar_excel_productos, name='exportar_excel_productos'),
 
     #inventario
-    path('inventario/', views.modulo_inventario, name='modulo_inventario'),
+    path('inventario/', views.modulo_inventario, name='modulo_inventario'),#listo
     path('autocomplete_sku/', views.autocomplete_sku, name='autocomplete_sku'),
     path('inventario/editar/<int:id>/', views.editar_movimiento, name='editar_movimiento'),
     path('inventario/eliminar/<int:id>/', views.eliminar_movimiento, name='eliminar_movimiento'),
+    path('inventario/buscar/', views.buscar_movimientos, name='buscar_movimientos'),# listo
     path('inventario/buscar/', views.buscar_movimientos, name='buscar_movimientos'),
+    path("exportar-excel/", exportar_movimientos_excel, name="exportar_excel"),
+
 
     
     # Categorias
