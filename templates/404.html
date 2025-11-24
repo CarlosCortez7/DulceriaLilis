@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container d-flex flex-column justify-content-center align-items-center text-center"
+    style="min-height: 70vh;">
+
+    <h1 class="display-1 fw-bold text-danger">404</h1>
+
+    <h2 class="mb-3">¡Ups! Página no encontrada</h2>
+
+    <p class="lead text-muted mb-4">
+        Parece que la página que buscas no existe...<br>
+        o quizás alguien se la comió pensando que era un dulce.
+    </p>
+
+    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+        <a href="{% url 'home' %}" class="btn btn-danger btn-lg px-4 gap-3">
+            Volver al Inicio
+        </a>
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg px-4">
+            Regresar
+        </a>
+    </div>
+
+</div>
+{% endblock %}

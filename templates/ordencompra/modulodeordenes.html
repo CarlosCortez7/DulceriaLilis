@@ -1,0 +1,604 @@
+{% extends 'base.html' %}
+{% load static %} 
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+body { background-color: #f8f9fa; }
+.main-container { padding: 2rem; max-width: 1400px; margin: auto; }
+.card { background-color: #fff; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1.5rem; margin-bottom: 2rem; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #dee2e6; }
+.table th, .table td { vertical-align: middle; }
+/* Estilo para cabeceras de tabla ordenables */
+.table th a { text-decoration: none; color: inherit; }
+.table th a:hover { color: #0d6efd; }
+.table th i { font-size: 0.8em; margin-left: 4px; }
+
+.form-label { margin-bottom: 0.5rem; font-weight: 500; color: #343a40; }
+.form-control, .form-select { border-radius: 0.5rem; }
+.text-danger { font-size: 0.875em; }
+.form-control[readonly] { background-color: #e9ecef; }
+
+.badge-pendiente { background-color: #fff3cd; color: #664d03; }
+.badge-aprobada { background-color: #d1e7dd; color: #0f5132; }
+.badge-rechazada { background-color: #f8d7da; color: #721c24; }
+.badge-completada { background-color: #cff4fc; color: #055160; }
+.badge { padding: 0.4em 0.7em; border-radius: 0.375rem; font-size: 0.75em; font-weight: 600; }
+
+.django-messages { display: none; }
+</style>
+
+<!-- Contenedor para leer los mensajes de Django (oculto) -->
+<div class="django-messages">
+{% if messages %}
+{% for message in messages %}
+<div
+class="django-message-item"
+data-level="{{ message.tags }}"
+data-message="{{ message }}"
+></div>
+{% endfor %}
+{% endif %}
+</div>
+
+<div class="main-container">
+
+<!-- ================= FORMULARIO (Crear / Editar MAESTRO) ================= -->
+<!-- Ocultar todo el formulario si no se tiene permiso de crear O editar (Req 2) -->
+{% if perms.proveedores.add_ordencompra or perms.proveedores.change_ordencompra %}
+<div class="card">
+
+<!-- Título dinámico -->
+{% if editando %}
+    <h5>Editando Orden de Compra #{{ orden_a_editar.id }}</h5>
+    <p class="text-muted mb-0">Proveedor: {{ orden_a_editar.proveedor.razon_social }}</p>
+{% else %}
+    <h5>Crear Nueva Orden de Compra (Paso 1)</h5>
+{% endif %}
+
+<form method="POST" 
+      action="{% if editando %}{% url 'editar_orden_compra' orden_id=orden_a_editar.id %}{% else %}{% url 'gestion_orden_compra' %}{% endif %}"
+      id="main-orden-form"
+      novalidate>
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger mt-3">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <!-- Añadido fieldset para deshabilitar por permisos (Req 2) -->
+    <fieldset {% if editando and not perms.proveedores.change_ordencompra %}disabled{% elif not editando and not perms.proveedores.add_ordencompra %}disabled{% endif %}>
+        <div class="row g-3 mt-2">
+            
+            {% if editando %}
+            <div class="col-md-8">
+                <label class="form-label">Proveedor</label>
+                <input type="text" class="form-control" value="{{ orden_a_editar.proveedor.razon_social }}" readonly>
+            </div>
+            {% else %}
+            <div class="col-md-8">
+                <label class="form-label" for="{{ form.proveedor.id_for_label }}">Proveedor</label>
+                {{ form.proveedor }}
+                {% if form.proveedor.errors %}
+                    <div class="text-danger small mt-1">{{ form.proveedor.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="col-md-4">
+                <label class="form-label" for="{{ form.estado.id_for_label }}">Estado</label>
+                {{ form.estado }}
+                {% if form.estado.errors %}
+                    <div class="text-danger small mt-1">{{ form.estado.errors|striptags }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </fieldset>
+
+    <!-- Botones del Formulario -->
+    <div class="d-flex justify-content-end mt-4">
+        {% if editando %}
+            <!-- Añadido permiso (Req 2) -->
+            {% if perms.proveedores.change_ordencompra %}
+                <a href="{% url 'gestion_orden_compra' %}" class="btn btn-secondary me-2">Volver al Listado</a>
+                <button type="submit" class="btn btn-primary">Actualizar Estado</button>
+            {% endif %}
+        {% else %}
+            <!-- Añadido permiso (Req 2) -->
+            {% if perms.proveedores.add_ordencompra %}
+                <button type="reset" class="btn btn-secondary me-2">Limpiar</button>
+                <button type="submit" class="btn btn-primary">Guardar y Añadir Productos (Paso 2)</button>
+            {% endif %}
+        {% endif %}
+    </div>
+</form>
+
+<!-- 
+====================================================================
+INICIO DE SECCIÓN DE DETALLES (SOLO SI ESTAMOS EDITANDO)
+====================================================================
+-->
+<!-- Añadido permiso (Req 2) -->
+{% if editando and perms.proveedores.change_ordencompra %}
+<hr class="my-4">
+
+<!-- Formulario para AÑADIR productos (Detalle) -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="card-title">Añadir Producto a la Orden #{{ orden_a_editar.id }}</h6>
+        
+        <!-- Este formulario apunta a 'agregar_detalle_orden' -->
+        <form method="POST" 
+              action="{% url 'agregar_detalle_orden' orden_id=orden_a_editar.id %}" 
+              class="row g-3 align-items-end"
+              id="add-detalle-form"
+              novalidate> 
+            {% csrf_token %}
+            
+            {% if detalle_form.fields.producto_proveedor.queryset %}
+            <div class="col-md-5">
+                <label for="{{ detalle_form.producto_proveedor.id_for_label }}" class="form-label">{{ detalle_form.producto_proveedor.label }}</label>
+                {{ detalle_form.producto_proveedor }}
+            </div>
+            <div class="col-md-3">
+                <label for="{{ detalle_form.cantidad.id_for_label }}" class="form-label">Cantidad</label>
+                {{ detalle_form.cantidad }}
+                <!--: Mostrar errores de validación (Req 3.ii) -->
+                {% if detalle_form.cantidad.errors %}
+                    <div class="text-danger small mt-1">{{ detalle_form.cantidad.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-2">
+                <label for="{{ detalle_form.precio_unitario.id_for_label }}" class="form-label">Precio Unitario</label>
+                {{ detalle_form.precio_unitario }}
+                <!-- Mostrar errores de validación (Req 3.ii) -->
+                {% if detalle_form.precio_unitario.errors %}
+                    <div class="text-danger small mt-1">{{ detalle_form.precio_unitario.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-success w-100">Añadir</button>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <p class="text-muted mb-0">Este proveedor no tiene productos asociados. <a href="{% url 'editar_proveedor' orden_a_editar.proveedor.id %}">Asociar productos aquí</a>.</p>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de productos YA AÑADIDOS (Detalles) -->
+<h6 class="mt-4">Productos en esta Orden</h6>
+<div class="table-responsive">
+    <table class="table table-sm table-striped table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Producto (SKU)</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                <th>Subtotal</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in detalles_orden %}
+            <!-- Añadido ID a la fila para el JS de SweetAlert (Req 3.iv) -->
+            <tr id="detalle-row-{{ detalle.id }}">
+                <td>{{ detalle.producto.nombre|default:"Producto Eliminado" }} ({{ detalle.producto.sku|default:"N/A" }})</td>
+                <td>{{ detalle.cantidad | floatformat:2 }}</td>
+                <td>${{ detalle.precio_unitario | floatformat:6 }}</td>
+                <td>${{ detalle.subtotal | floatformat:2 }}</td>
+                <td>
+                    <!-- Botón con data-url para SweetAlert (Req 3.iv) y permiso (Req 2) -->
+                    {% if perms.proveedores.change_ordencompra %}
+                    <button type="button" 
+                            class="btn btn-outline-danger btn-sm btn-eliminar-detalle"
+                            data-url="{% url 'eliminar_detalle_orden' detalle.id %}">
+                        Quitar
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">Aún no hay productos en esta orden.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot class="table-group-divider">
+            <tr>
+                <td colspan="3" class="text-end"><strong>Total de la Orden:</strong></td>
+                <td><strong>${{ orden_a_editar.total | floatformat:2 }}</strong></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+{% endif %}
+<!-- FIN DE SECCIÓN DE DETALLES -->
+
+</div> 
+{% endif %}
+<!-- Fin Card Formulario -->
+
+
+<!-- 
+====================================================================
+LISTADO DE ÓRDENES (MAESTRO)
+====================================================================
+-->
+<div class="card">
+<div class="card-header">
+<h5>Órdenes de Compra Registradas</h5>
+<!-- Botón de Exportar (Req 3.v) y permiso (Req 2) -->
+{% if perms.proveedores.view_ordencompra %}
+<a href="{% url 'exportar_excel_ordenes' %}?q={{ query|default:'' }}" class="btn btn-success">
+    <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+</a>
+{% endif %}
+</div>
+
+<!-- Formulario de Búsqueda y Paginador (Req 3.i, 3.ii, 3.iii) -->
+<form method="GET" action="{% url 'gestion_orden_compra' %}" class="mb-3">
+    <div class="row g-3 align-items-center">
+         <div class="col-md-5">
+            <label for="q" class="visually-hidden">Buscar</label>
+            <input type="text" class="form-control" name="q" id="q" placeholder="Buscar por ID, Proveedor o Estado..." value="{{ query | default:'' }}">
+         </div>
+         <div class="col-md-3">
+            <label for="page_size" class="visually-hidden">Resultados por página</label>
+            <!-- Req 3.ii: Select de paginador -->
+            <select name="page_size" id="page_size" class="form-select" onchange="this.form.submit()">
+                <option value="5" {% if page_size == 5 %}selected{% endif %}>Mostrar 5</option>
+                <option value="10" {% if page_size == 10 %}selected{% endif %}>Mostrar 10</option>
+                <option value="25" {% if page_size == 25 %}selected{% endif %}>Mostrar 25</option>
+                <option value="50" {% if page_size == 50 %}selected{% endif %}>Mostrar 50</option>
+            </select>
+         </div>
+         <div class="col-md-2">
+             <button type="submit" class="btn btn-primary w-100">Buscar</button>
+         </div>
+         <div class="col-md-2">
+            <a href="{% url 'gestion_orden_compra' %}" class="btn btn-outline-secondary w-100">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <!-- Cabeceras Ordenables (Req 3.iv) -->
+                <th>
+                    <a href="?page={{ page_obj.number }}&page_size={{ page_size }}&sort=id&dir={% if sort_by == 'id' and direction == 'asc' %}desc{% else %}asc{% endif %}{% if query %}&q={{ query }}{% endif %}">
+                        ID
+                        {% if sort_by == 'id' %}<i class="bi bi-caret-{% if direction == 'asc' %}up{% else %}down{% endif %}-fill"></i>{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?page={{ page_obj.number }}&page_size={{ page_size }}&sort=proveedor__razon_social&dir={% if sort_by == 'proveedor__razon_social' and direction == 'asc' %}desc{% else %}asc{% endif %}{% if query %}&q={{ query }}{% endif %}">
+                        Proveedor
+                        {% if sort_by == 'proveedor__razon_social' %}<i class="bi bi-caret-{% if direction == 'asc' %}up{% else %}down{% endif %}-fill"></i>{% endif %}
+                    </a>
+                </th>
+                <th>Usuario</th>
+                <th>
+                    <a href="?page={{ page_obj.number }}&page_size={{ page_size }}&sort=fecha_emision&dir={% if sort_by == 'fecha_emision' and direction == 'asc' %}desc{% else %}asc{% endif %}{% if query %}&q={{ query }}{% endif %}">
+                        Fecha Emisión
+                        {% if sort_by == 'fecha_emision' %}<i class="bi bi-caret-{% if direction == 'asc' %}up{% else %}down{% endif %}-fill"></i>{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?page={{ page_obj.number }}&page_size={{ page_size }}&sort=estado&dir={% if sort_by == 'estado' and direction == 'asc' %}desc{% else %}asc{% endif %}{% if query %}&q={{ query }}{% endif %}">
+                        Estado
+                        {% if sort_by == 'estado' %}<i class="bi bi-caret-{% if direction == 'asc' %}up{% else %}down{% endif %}-fill"></i>{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?page={{ page_obj.number }}&page_size={{ page_size }}&sort=total&dir={% if sort_by == 'total' and direction == 'asc' %}desc{% else %}asc{% endif %}{% if query %}&q={{ query }}{% endif %}">
+                        Total
+                        {% if sort_by == 'total' %}<i class="bi bi-caret-{% if direction == 'asc' %}up{% else %}down{% endif %}-fill"></i>{% endif %}
+                    </a>
+                </th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for orden in page_obj %}
+            <!-- Añadido ID a la fila (Req 3.iv) -->
+            <tr id="orden-row-{{ orden.id }}">
+                <td>#{{ orden.id }}</td>
+                <td>{{ orden.proveedor.razon_social }}</td>
+                <td>{{ orden.usuario.username|default:"N/A" }}</td>
+                <td>{{ orden.fecha_emision|date:"Y-m-d H:i" }}</td>
+                <td>
+                    {% if orden.estado == 'pendiente' %}
+                        <span class="badge badge-pendiente">Pendiente</span>
+                    {% elif orden.estado == 'aprobada' %}
+                        <span class="badge badge-aprobada">Aprobada</span>
+                    {% elif orden.estado == 'rechazada' %}
+                        <span class="badge badge-rechazada">Rechazada</span>
+                    {% elif orden.estado == 'completada' %}
+                        <span class="badge badge-completada">Completada</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ orden.get_estado_display }}</span>
+                    {% endif %}
+                </td>
+                <td>${{ orden.total|floatformat:2 }}</td>
+                <td>
+                    <!-- Añadido permiso (Req 2) -->
+                    {% if perms.proveedores.change_ordencompra %}
+                    <a href="{% url 'editar_orden_compra' orden.id %}" class="btn btn-sm btn-warning">
+                        <i class="bi bi-pencil-fill"></i> Gestionar
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Botón con data-url (Req 3.iv) y permiso (Req 2) -->
+                    {% if perms.proveedores.delete_ordencompra %}
+                    <button type="button" 
+                            class="btn btn-sm btn-danger btn-eliminar-oc"
+                            data-url="{% url 'eliminar_orden_compra' orden.id %}">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No hay órdenes de compra registradas{% if query %} que coincidan con la búsqueda{% endif %}.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Paginación -->
+{% if page_obj.has_other_pages %}
+    <nav aria-label="Navegación de páginas" class="mt-4">
+        <ul class="pagination justify-content-center">
+            
+            {% with base_params=page_size|stringformat:"s"|add:"&sort="|add:sort_by|add:"&dir="|add:direction %}
+            
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1&page_size={{ base_params }}{% if query %}&q={{ query }}{% endif %}">&laquo; Primero</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&page_size={{ base_params }}{% if query %}&q={{ query }}{% endif %}">Anterior</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo; Primero</span></li>
+                <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+            {% endif %}
+            
+            <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+            
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&page_size={{ base_params }}{% if query %}&q={{ query }}{% endif %}">Siguiente</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&page_size={{ base_params }}{% if query %}&q={{ query }}{% endif %}">Último &raquo;</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+                <li class="page-item disabled"><span class="page-link">Último &raquo;</span></li>
+            {% endif %}
+
+            {% endwith %}
+        </ul>
+    </nav>
+{% endif %}
+
+</div> <!-- Fin Card Listado -->
+
+</div> <!-- Fin .main-container -->
+
+<!-- 
+====================================================================
+SCRIPT DE SWEETALERT Y JAVASCRIPT (EDITADO PARA FETCH)
+====================================================================
+-->
+<script>
+// Pasamos los costos de los productos desde la vista (views.py)
+const productosData = {{ productos_data_json|safe }};
+
+// Función robusta para leer el Token CSRF desde las cookies
+function getCsrfToken() {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // ¿La cookie comienza con 'csrftoken='?
+            if (cookie.substring(0, 10) === ('csrftoken=')) {
+                cookieValue = decodeURIComponent(cookie.substring(10));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- 1. Alertas de Notificación (Toast) ---
+    const messageItems = document.querySelectorAll('.django-message-item');
+    messageItems.forEach(function(item, index) {
+        const level = item.dataset.level;
+        const message = item.dataset.message;
+        
+        let icon = 'info';
+        let title = 'Notificación';
+        
+        if (level.includes('success')) { icon = 'success'; title = '¡Éxito!'; }
+        else if (level.includes('error')) { icon = 'error'; title = '¡Error!'; }
+        else if (level.includes('warning')) { icon = 'warning'; title = 'Advertencia'; }
+
+        setTimeout(() => {
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: icon,
+                timer: 4000,
+                timerProgressBar: true,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false
+            });
+        }, index * 500);
+    });
+
+    // --- Obtener el token CSRF del formulario principal ---
+    const csrfToken = getCsrfToken();
+
+    if (!csrfToken) {
+        console.error("Error Crítico: No se encontró el token CSRF. Los formularios de eliminación no funcionarán.");
+    }
+
+    // --- 2. Confirmación para Eliminar Orden de Compra (Maestro) ---
+    document.body.addEventListener('click', function(event) {
+        const deleteButton = event.target.closest('.btn-eliminar-oc');
+        if (deleteButton) {
+            event.preventDefault(); 
+            const url = deleteButton.dataset.url; // URL desde data-url
+            const fila = deleteButton.closest('tr');
+            
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¡Eliminarás esta Orden de Compra completa y todos sus productos!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, ¡eliminar!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    
+                    // --- INICIO DE FETCH ---
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        // --- manejo de errores ---
+                        if (!response.ok) {
+                            // Si el servidor responde con 4xx o 5xx, intentamos leer como texto
+                            return response.text().then(text => { 
+                                throw new Error('Error del servidor: ' + text);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success') {
+                            Swal.fire('¡Eliminada!', data.message, 'success');
+                            if (fila) fila.remove(); // Eliminar la fila de la tabla
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error en fetch:", error);
+                        // El error "Unexpected token '<'" también caerá aquí
+                        if (error.message.includes('Unexpected token')) {
+                            Swal.fire('Error', 'El servidor falló (Error 500). Revisa la consola de Django.', 'error');
+                        } else {
+                            Swal.fire('Error', 'No se pudo conectar al servidor.', 'error');
+                        }
+                    });
+                    // --- FIN DE FETCH ---
+                }
+            });
+        }
+    });
+
+    // --- 3. Confirmación para Quitar Producto (Detalle) ---
+    // (Esta función ahora usará el csrfToken)
+    document.body.addEventListener('click', function(event) {
+        const deleteButton = event.target.closest('.btn-eliminar-detalle');
+        if (deleteButton) {
+            event.preventDefault(); 
+            const url = deleteButton.dataset.url; // URL desde data-url
+            const fila = deleteButton.closest('tr');
+            
+            Swal.fire({
+                title: '¿Quitar Producto?',
+                text: "Quitarás este producto de la orden.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, ¡quitar!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    
+                    // --- INICIO DE FETCH ---
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        // --- Mejor manejo de errores ---
+                        if (!response.ok) {
+                            // Si el servidor responde con 4xx o 5xx, intentamos leer como texto
+                            return response.text().then(text => { 
+                                // El error 500 que viste entrará aquí
+                                console.error('Error del servidor:', text);
+                                throw new Error('Error 500: Fallo interno del servidor.');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success') {
+                            Swal.fire('¡Quitado!', data.message, 'success');
+                            if (fila) {
+                                fila.remove();
+                                // Recargar la página para ver el total actualizado
+                                location.reload(); 
+                            }
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error en fetch:", error);
+                         // El error "Unexpected token '<'" también caerá aquí
+                        if (error.message.includes('Error 500')) {
+                            Swal.fire('Error', 'El servidor falló (Error 500). Revisa la consola de Django.', 'error');
+                        } else if (error.message.includes('Unexpected token')) {
+                            Swal.fire('Error', 'El servidor falló (Error 500). Revisa la consola de Django.', 'error');
+                        } else {
+                            Swal.fire('Error', 'No se pudo conectar al servidor.', 'error');
+                        }
+                    });
+                    // --- FIN DE FETCH ---
+                }
+            });
+        }
+    });
+    
+    // --- 4. Auto-rellenar precio al seleccionar producto ---
+    const productoSelect = document.getElementById('id_producto_proveedor_select');
+    const precioInput = document.getElementById('id_precio_unitario');
+
+    if (productoSelect && precioInput) {
+        productoSelect.addEventListener('change', function() {
+            const selectedProductoProveedorId = this.value;
+            if (productosData[selectedProductoProveedorId]) {
+                const costo = productosData[selectedProductoProveedorId];
+                precioInput.value = costo;
+            } else {
+                precioInput.value = ''; 
+            }
+        });
+    }
+
+});
+</script>
+
+{% endblock %}

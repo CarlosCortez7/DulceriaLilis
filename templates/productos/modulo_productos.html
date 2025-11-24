@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    body { background-color: #f8f9fa; }
+    .main-container { padding: 2rem; max-width: 1400px; margin: auto; }
+    .card { background-color: #fff; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1.5rem; margin-bottom: 2rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #dee2e6; }
+    .nav-tabs .nav-link { color: #495057; border-bottom: 2px solid transparent; }
+    .nav-tabs .nav-link.active { color: #0d6efd; border-color: #0d6efd; background-color: transparent; }
+    .tab-content { padding-top: 1.5rem; }
+    .table th, .table td { vertical-align: middle; }
+</style>
+
+<div class="main-container">
+    <!-- === FORMULARIO === -->
+    <div class="card">
+        <h5>{% if edit_mode %}Editar Producto: {{ producto.nombre }}{% else %}Formulario de Producto{% endif %}</h5>
+        <form method="POST" action="{% if edit_mode %}{% url 'editar_producto' producto.id %}{% else %}{% url 'agregar_producto' %}{% endif %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <ul class="nav nav-tabs mt-3" id="productTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="identificacion-tab" data-bs-toggle="tab" data-bs-target="#identificacion" type="button" role="tab">1. Identificación y Precios</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock" type="button" role="tab">2. Stock y Control</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="relaciones-tab" data-bs-toggle="tab" data-bs-target="#relaciones" type="button" role="tab">3. Archivos y Estado</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="productTabContent">
+                <!-- === PESTAÑA 1 === -->
+                <div class="tab-pane fade show active" id="identificacion" role="tabpanel">
+                    <div class="row mt-3">
+                        <div class="col-md-6 mb-3">{{ form.sku.label_tag }} {{ form.sku }}</div>
+                        <div class="col-md-6 mb-3">{{ form.ean_upc.label_tag }} {{ form.ean_upc }}</div>
+                    </div>
+                    <div class="row"><div class="col-12 mb-3">{{ form.nombre.label_tag }} {{ form.nombre }}</div></div>
+                    <div class="row"><div class="col-12 mb-3">{{ form.descripcion.label_tag }} {{ form.descripcion }}</div></div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">{{ form.categoria.label_tag }} {{ form.categoria }}</div>
+                        <div class="col-md-4 mb-3">{{ form.marca.label_tag }} {{ form.marca }}</div>
+                        <div class="col-md-4 mb-3">{{ form.modelo.label_tag }} {{ form.modelo }}</div>
+                    </div>
+                    <hr>
+                    <h6>Unidades y Precios</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">{{ form.uom_compra.label_tag }} {{ form.uom_compra }}</div>
+                        <div class="col-md-4 mb-3">{{ form.uom_venta.label_tag }} {{ form.uom_venta }}</div>
+                        <div class="col-md-4 mb-3">{{ form.factor_conversion.label_tag }} {{ form.factor_conversion }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">{{ form.costo_estandar.label_tag }} {{ form.costo_estandar }}</div>
+                        <div class="col-md-4 mb-3">{{ form.precio_venta.label_tag }} {{ form.precio_venta }}</div>
+                        <div class="col-md-4 mb-3">{{ form.impuesto_iva.label_tag }} {{ form.impuesto_iva }}</div>
+                    </div>
+                </div>
+
+                <!-- === PESTAÑA 2 === -->
+                <div class="tab-pane fade" id="stock" role="tabpanel">
+                    <div class="row mt-3">
+                        <div class="col-md-4 mb-3">{{ form.stock_minimo.label_tag }} {{ form.stock_minimo }}</div>
+                        <div class="col-md-4 mb-3">{{ form.stock_maximo.label_tag }} {{ form.stock_maximo }}</div>
+                        <div class="col-md-4 mb-3">{{ form.punto_reorden.label_tag }} {{ form.punto_reorden }}</div>
+                    </div>
+                    <hr>
+                    <h6>Control Especial</h6>
+                    <div class="form-check form-switch mb-3">{{ form.perishable }} {{ form.perishable.label_tag }}</div>
+                    <div class="form-check form-switch mb-3">{{ form.control_por_lote }} {{ form.control_por_lote.label_tag }}</div>
+                    <div class="form-check form-switch mb-3">{{ form.control_por_serie }} {{ form.control_por_serie.label_tag }}</div>
+                </div>
+
+                <!-- === PESTAÑA 3 === -->
+                <div class="tab-pane fade" id="relaciones" role="tabpanel">
+                    <div class="row mt-3">
+                        <div class="col-md-6 mb-3">{{ form.imagen.label_tag }} {{ form.imagen }}</div>
+                        <div class="col-md-6 mb-3">{{ form.ficha_tecnica.label_tag }} {{ form.ficha_tecnica }}</div>
+                    </div>
+                    <hr>
+                    <h6>Estado</h6>
+                    <div class="col-md-4 mb-3">{{ form.estado.label_tag }} {{ form.estado }}</div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end mt-4">
+                {% if edit_mode %}
+                    <a href="{% url 'modulo_productos' %}" class="btn btn-secondary me-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                {% else %}
+                    <button type="reset" class="btn btn-secondary me-2">Limpiar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- === TABLA CON FILTRO Y ACCIONES === -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Productos</h5>
+            <a href="{% url 'exportar_excel_productos' %}" class="btn btn-success" id="export-excel-btn-product">Exportar a Excel</a>
+        </div>
+
+        <!-- Filtros -->
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="filter-nombre" placeholder="Filtrar por nombre...">
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="filter-categoria" placeholder="Filtrar por categoría...">
+            </div>
+            <div class="col-md-3">
+                <input type="number" class="form-control" id="filter-precio" placeholder="Filtrar por precio venta...">
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Precio Venta</th>
+                        <th>Stock Mín.</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="product-table-body">
+                    {% include 'productos/_product_list_partial.html' %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nombreInput = document.getElementById('filter-nombre');
+    const categoriaInput = document.getElementById('filter-categoria');
+    const precioInput = document.getElementById('filter-precio');
+    const productTableBody = document.getElementById('product-table-body');
+    const productExportBtn = document.getElementById('export-excel-btn-product');
+    const productFilterUrl = "{% url 'modulo_productos' %}";
+    let debounceTimer;
+
+    // === SWEETALERT ===
+    function attachActionListeners() {
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = this.href;
+                Swal.fire({
+                    title: "¿Editar producto?",
+                    text: "Serás redirigido al formulario de edición.",
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, editar",
+                    cancelButtonText: "Cancelar",
+                    confirmButtonColor: "#0d6efd",
+                    cancelButtonColor: "#6c757d"
+                }).then(result => {
+                    if (result.isConfirmed) window.location.href = url;
+                });
+            });
+        });
+
+        document.querySelectorAll('.delete-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: "¿Eliminar producto?",
+                    text: "Esta acción no se puede deshacer.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, eliminar",
+                    cancelButtonText: "Cancelar",
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6"
+                }).then(result => {
+                    if (result.isConfirmed) this.submit();
+                });
+            });
+        });
+    }
+
+    // === FILTRO AJAX ===
+    function fetchFilteredProducts(page=1) {
+        const params = new URLSearchParams({
+            nombre: nombreInput.value,
+            categoria: categoriaInput.value,
+            precio: precioInput.value,
+            page: page
+        });
+        const fetchUrl = `${productFilterUrl}?${params.toString()}`;
+        productExportBtn.href = `{% url 'exportar_excel_productos' %}?${params.toString()}`;
+        productTableBody.style.opacity = '0.5';
+
+        fetch(fetchUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+            if (data.html_from_view) {
+                productTableBody.innerHTML = data.html_from_view;
+                attachActionListeners();
+            }
+        })
+        .finally(() => { productTableBody.style.opacity = '1'; });
+    }
+
+    // --- EVENTOS FILTRO ---
+    [nombreInput, categoriaInput, precioInput].forEach(input => {
+        input.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => fetchFilteredProducts(), 300);
+        });
+    });
+
+    // --- PAGINACIÓN AJAX ---
+    document.addEventListener('click', function(e) {
+        if(e.target.matches('.page-link[data-page]')) {
+            e.preventDefault();
+            const page = e.target.dataset.page;
+            fetchFilteredProducts(page);
+        }
+    });
+
+    attachActionListeners();
+});
+</script>
+{% endblock %}

@@ -23,12 +23,12 @@ load_dotenv(BASE_DIR / ".env")  # ← carga el .env
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-unsafe")
 
-DEBUG = True
+DEBUG = False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'proveedores',
     'compras',
     'core',
-
 ]
 
 MIDDLEWARE = [
@@ -56,6 +55,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'usuarios.middleware.ForcePasswordChangeMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -95,6 +95,10 @@ DATABASES = {
 }
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
+AUTHENTICATION_BACKENDS = [
+    'usuarios.backends.EmailOrUsernameBackend',  # tu backend personalizado
+    'django.contrib.auth.backends.ModelBackend',  # backend por defecto
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -144,26 +148,29 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración de login/logout
-LOGIN_URL = '/iniciar_sesion/'
-LOGIN_REDIRECT_URL = '/compras/'
-LOGOUT_REDIRECT_URL = '/admin/login/'
+LOGIN_URL = '/usuarios/iniciar_sesion/'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = '/usuarios/iniciar_sesion/'
 
 
 
 
-# ============================================================
-# CONFIGURACIÓN DE EMAIL PARA RECUPERAR CONTRASEÑA
-# ============================================================
-
-# En desarrollo, puedes usar este backend para ver los correos en la terminal:
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# ==============================
+# CONFIGURACIÓN DE EMAIL REAL (GMAIL)
+# ==============================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")  
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")  
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 # Configuraciones de sesión
 SESSION_COOKIE_AGE = 60*60*2  # 2 horas
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_SAVE_EVERY_REQUEST = False
-# Cambiaremos SESSION_COOKIE_SECURE a True en producción
 SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_SAMESITE = 'Lax'
 
