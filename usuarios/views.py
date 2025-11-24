@@ -51,6 +51,8 @@ def home(request):
     return render(request, 'home.html')
 
 # --- REGISTRO (Solo Admin) ---
+@login_required
+@user_passes_test(solo_admin, login_url='sin_permiso') 
 def registrarse(request):
     if request.method == 'GET':
         form = UsuarioCreationForm()
