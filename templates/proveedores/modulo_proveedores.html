@@ -1,837 +1,677 @@
 {% extends 'base.html' %}
-<!-- EDITADO: Añadido para cargar el nuevo filtro -->
 {% load form_tags %} 
 
 {% block content %}
 
-<!-- Importamos la librería de SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<!-- EDITADO: Añadido Bootstrap Icons (para las flechas de ordenar) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 <style>
-body { background-color: #f8f9fa; }
-.main-container { padding: 2rem; max-width: 1400px; margin: auto; }
-.card { background-color: #fff; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1.5rem; margin-bottom: 2rem; }
-.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #dee2e6; }
-.nav-tabs .nav-link { color: #495057; border-bottom: 2px solid transparent; font-weight: 500; }
-.nav-tabs .nav-link.active { color: #0d6efd; border-color: #0d6efd; background-color: transparent; font-weight: 600; }
-.tab-content { padding-top: 1.5rem; }
-.table th, .table td { vertical-align: middle; }
-.table th a { text-decoration: none; color: inherit; }
-.table th a:hover { color: #0d6efd; }
-.table th i { font-size: 0.8em; margin-left: 4px; }
-.form-label { margin-bottom: 0.5rem; font-weight: 500; color: #343a40; }
-.form-control[readonly] { background-color: #e9ecef; opacity: 1; }
-.badge-active { background-color: #d4edda; color: #155724; padding: 0.4em 0.7em; border-radius: 0.375rem; font-size: 0.75em; font-weight: 600; }
-.badge-blocked { background-color: #f8d7da; color: #721c24; padding: 0.4em 0.7em; border-radius: 0.375rem; font-size: 0.75em; font-weight: 600; }
-.form-control, .form-select { border-radius: 0.5rem; }
-.text-danger { font-size: 0.875em; }
-.django-messages { display: none; }
-.nav-tabs-inner { margin-top: 1rem; padding-left: 1rem; border-bottom: 1px solid #dee2e6; }
-.nav-tabs-inner .nav-link { font-size: 0.9em; padding: 0.5rem 0.8rem; }
-.tab-content-inner { padding: 1.5rem 1rem 0 1rem; }
+    body { background-color: #f8f9fa; }
+    .main-container { padding: 2rem; max-width: 1400px; margin: auto; }
+    .card { background-color: #fff; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1.5rem; margin-bottom: 2rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #dee2e6; }
+    
+    /* Tabs Principales */
+    .nav-tabs .nav-link { color: #495057; border-bottom: 2px solid transparent; font-weight: 500; }
+    .nav-tabs .nav-link.active { color: #0d6efd; border-color: #0d6efd; background-color: transparent; font-weight: 600; }
+    .tab-content { padding-top: 1.5rem; }
+    
+    /* Estilos Tabla */
+    .table th, .table td { vertical-align: middle; }
+    .table th a { text-decoration: none; color: inherit; }
+    .table th a:hover { color: #0d6efd; }
+    .table th i { font-size: 0.8em; margin-left: 4px; }
+    
+    /* Badges de Estado */
+    .badge-active { background-color: #d4edda; color: #155724; padding: 0.4em 0.7em; border-radius: 0.375rem; font-size: 0.75em; font-weight: 600; }
+    .badge-blocked { background-color: #f8d7da; color: #721c24; padding: 0.4em 0.7em; border-radius: 0.375rem; font-size: 0.75em; font-weight: 600; }
+    
+    .django-messages { display: none; }
+    
+    /* Tabs Internas (Productos) */
+    .nav-tabs-inner { margin-top: 1rem; padding-left: 1rem; border-bottom: 1px solid #dee2e6; }
+    .nav-tabs-inner .nav-link { font-size: 0.9em; padding: 0.5rem 0.8rem; }
+    .tab-content-inner { padding: 1.5rem 1rem 0 1rem; }
 </style>
 
-<!-- Contenedor para leer los mensajes de Django (oculto) -->
 <div class="django-messages">
-{% if messages %}
-{% for message in messages %}
-<div
-class="django-message-item"
-data-level="{{ message.tags }}"
-data-message="{{ message }}"
-></div>
-{% endfor %}
-{% endif %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="django-message-item" data-level="{{ message.tags }}" data-message="{{ message }}"></div>
+        {% endfor %}
+    {% endif %}
 </div>
 
 <div class="main-container">
 
-<!-- ================= FORMULARIO PRINCIPAL Y TABS (CORREGIDO) ================= -->
-{% if perms.proveedores.add_proveedor or perms.proveedores.change_proveedor %}
-<div class="card">
+    {% if perms.proveedores.add_proveedor or perms.proveedores.change_proveedor %}
+    <div class="card">
+        
+        {% if editando %}
+            <h5>Editando Proveedor: <span class="text-primary">{{ proveedor_a_editar.razon_social }}</span></h5>
+        {% else %}
+            <h5>Crear Nuevo Proveedor</h5>
+        {% endif %}
 
-<!-- Título dinámico -->
-{% if editando %}
-    <h5>Editando Proveedor: {{ proveedor_a_editar.razon_social }}</h5>
-{% else %}
-    <h5>Formulario de Proveedor</h5>
-{% endif %}
-
-<ul class="nav nav-tabs mt-3" id="supplierTab" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="identificacion-tab" data-bs-toggle="tab" data-bs-target="#identificacion-pane" type="button" role="tab">1. Identificación y contacto</button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="direccion-tab" data-bs-toggle="tab" data-bs-target="#direccion-pane" type="button" role="tab">2. Dirección y comercial</button>
-    </li>
-    
-    {% if editando and perms.proveedores.change_proveedor %}
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="productos-tab" data-bs-toggle="tab" data-bs-target="#productos-pane" type="button" role="tab">3. Productos Asociados</button>
-    </li>
-    {% endif %}
-</ul>
-
-<!-- 
-====================================================================
-Declaramos los 3 formularios por separado, fuera de las pestañas.
-====================================================================
--->
-<form id="main-provider-form" 
-      method="POST" 
-      action="{% if editando %}{% url 'editar_proveedor' proveedor_id=proveedor_a_editar.id %}{% else %}{% url 'modulo_proveedores' %}{% endif %}" 
-      novalidate>
-    {% csrf_token %}
-    <!-- Este form se rellena desde Pestaña 1 y 2 -->
-</form>
-
-{% if editando %}
-    <!-- Formulario 2 (Asociar Existente) -->
-    <form id="associate-existing-form" 
-          method="POST" 
-          action="{% url 'asociar_producto_proveedor' proveedor_id=proveedor_a_editar.id %}" 
-          class="row g-3"
-          novalidate>
-        {% csrf_token %}
-        <!-- Este form se rellena desde Pestaña 3 / Sub-Pestaña 1 -->
-    </form>
-
-    <!-- Formulario 3 (Crear Nuevo) -->
-    <form id="associate-new-form" 
-          method="POST" 
-          action="{% url 'asociar_producto_proveedor' proveedor_id=proveedor_a_editar.id %}" 
-          class="row g-3"
-          novalidate>
-        {% csrf_token %}
-        <!-- Este form se rellena desde Pestaña 3 / Sub-Pestaña 2 -->
-    </form>
-{% endif %}
-<!-- 
-====================================================================
-FIN DE LA CORRECCIÓN DE FORMULARIOS
-====================================================================
--->
-
-
-<div class="tab-content" id="supplierTabContent">
-    
-    <!-- PANE 1: Identificación -->
-    <div class="tab-pane fade show active" id="identificacion-pane" role="tabpanel">
-            
-            {% if form.non_field_errors %}
-                <div class="alert alert-danger mt-3">
-                    {{ form.non_field_errors }}
-                </div>
-            {% endif %}
-
-            <fieldset {% if editando and not perms.proveedores.change_proveedor %}disabled{% elif not editando and not perms.proveedores.add_proveedor %}disabled{% endif %}>
-                <h6 class="mt-4">Identificación legal y contacto</h6>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label" for="{{ form.rut_nif.id_for_label }}">RUT/NIF (único)</label>
-                        {{ form.rut_nif|attr:"form:main-provider-form" }}
-                        {% if form.rut_nif.errors %}
-                            <div class="text-danger small mt-1">{{ form.rut_nif.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label" for="{{ form.razon_social.id_for_label }}">Razón social</label>
-                        {{ form.razon_social|attr:"form:main-provider-form" }}
-                        {% if form.razon_social.errors %}
-                            <div class="text-danger small mt-1">{{ form.razon_social.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label" for="{{ form.nombre_fantasia.id_for_label }}">Nombre de fantasía</label>
-                    {{ form.nombre_fantasia|attr:"form:main-provider-form" }}
-                    {% if form.nombre_fantasia.errors %}
-                        <div class="text-danger small mt-1">{{ form.nombre_fantasia.errors|striptags }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
-                        {{ form.email|attr:"form:main-provider-form" }}
-                        {% if form.email.errors %}
-                            <div class="text-danger small mt-1">{{ form.email.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="{{ form.telefono.id_for_label }}">Teléfono General</label>
-                        {{ form.telefono|attr:"form:main-provider-form" }}
-                        {% if form.telefono.errors %}
-                            <div class="text-danger small mt-1">{{ form.telefono.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="{{ form.sitio_web.id_for_label }}">Sitio web</label>
-                        {{ form.sitio_web|attr:"form:main-provider-form" }}
-                        {% if form.sitio_web.errors %}
-                            <div class="text-danger small mt-1">{{ form.sitio_web.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <h6 class="mt-4">Contacto principal</h6>
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label" for="{{ form.contacto_principal_nombre.id_for_label }}">Nombre Contacto</label>
-                        {{ form.contacto_principal_nombre|attr:"form:main-provider-form" }}
-                        {% if form.contacto_principal_nombre.errors %}
-                            <div class="text-danger small mt-1">{{ form.contacto_principal_nombre.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="{{ form.contacto_principal_email.id_for_label }}">{{ form.contacto_principal_email.label }}</label>
-                        {{ form.contacto_principal_email|attr:"form:main-provider-form" }}
-                        {% if form.contacto_principal_email.errors %}
-                            <div class="text-danger small mt-1">{{ form.contacto_principal_email.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="{{ form.contacto_principal_telefono.id_for_label }}">Teléfono Contacto</label>
-                        {{ form.contacto_principal_telefono|attr:"form:main-provider-form" }}
-                         {% if form.contacto_principal_telefono.errors %}
-                            <div class="text-danger small mt-1">{{ form.contacto_principal_telefono.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </fieldset>
-    </div> <!-- FIN PANE 1 -->
-
-    <!-- PANE 2: Dirección -->
-    <div class="tab-pane fade" id="direccion-pane" role="tabpanel">
-            <fieldset {% if editando and not perms.proveedores.change_proveedor %}disabled{% elif not editando and not perms.proveedores.add_proveedor %}disabled{% endif %}>
-                <h6 class="mt-4">Dirección y Condiciones Comerciales</h6>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label" for="{{ form.direccion.id_for_label }}">Dirección</label>
-                        {{ form.direccion|attr:"form:main-provider-form" }}
-                        {% if form.direccion.errors %}
-                            <div class="text-danger small mt-1">{{ form.direccion.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label" for="{{ form.ciudad.id_for_label }}">Ciudad</label>
-                        {{ form.ciudad|attr:"form:main-provider-form" }}
-                         {% if form.ciudad.errors %}
-                            <div class="text-danger small mt-1">{{ form.ciudad.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label" for="{{ form.pais.id_for_label }}">País</label>
-                        {{ form.pais|attr:"form:main-provider-form" }}
-                         {% if form.pais.errors %}
-                            <div class="text-danger small mt-1">{{ form.pais.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label" for="{{ form.condiciones_pago.id_for_label }}">Condiciones de pago</label>
-                        {{ form.condiciones_pago|attr:"form:main-provider-form" }}
-                        {% if form.condiciones_pago.errors %}
-                            <div class="text-danger small mt-1">{{ form.condiciones_pago.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="{{ form.moneda.id_for_label }}">Moneda</label>
-                        {{ form.moneda|attr:"form:main-provider-form" }}
-                         {% if form.moneda.errors %}
-                            <div class="text-danger small mt-1">{{ form.moneda.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label" for="{{ form.tipo.id_for_label }}">Tipo</label>
-
-                        {{ form.tipo|attr:"form:main-provider-form" }}
-                        {% if form.tipo.errors %}
-                            <div class="text-danger small mt-1">{{ form.tipo.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label" for="{{ form.estado.id_for_label }}">Estado</label>
-                        {{ form.estado|attr:"form:main-provider-form" }}
-                        {% if form.estado.errors %}
-                            <div class="text-danger small mt-1">{{ form.estado.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label" for="{{ form.observaciones.id_for_label }}">Observaciones</label>
-                        {{ form.observaciones|attr:"form:main-provider-form" }}
-                         {% if form.observaciones.errors %}
-                            <div class="text-danger small mt-1">{{ form.observaciones.errors|striptags }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            
-                <!-- Botones del Formulario Principal (Tabs 1 y 2) -->
-                <div class="d-flex justify-content-end mt-4 p-3 border-top">
-                    {% if editando %}
-                        {% if perms.proveedores.change_proveedor %}
-                            <a href="{% url 'modulo_proveedores' %}" class="btn btn-secondary me-2">Cancelar Edición</a>
-                            <button type="submit" class="btn btn-primary" form="main-provider-form">Actualizar Proveedor (Pasos 1 y 2)</button>
-                        {% endif %}
-                    {% else %}
-                        {% if perms.proveedores.add_proveedor %}
-                            <button type="reset" class="btn btn-secondary me-2" form="main-provider-form">Limpiar</button>
-                            <button type="submit" class="btn btn-primary" form="main-provider-form">Guardar y Continuar al Paso 3</button>
-                        {% endif %}
-                    {% endif %}
-                </div>
-            </fieldset>
-    </div> <!-- FIN PANE 2 -->
-
-
-    <!-- PANE 3: Productos (Totalmente independiente) -->
-    {% if editando and perms.proveedores.change_proveedor %}
-    <div class="tab-pane fade" id="productos-pane" role="tabpanel">
-
-        <ul class="nav nav-tabs nav-tabs-inner" id="tabProductosInterna" role="tablist">
+        <ul class="nav nav-tabs mt-3" id="supplierTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="asociar-existente-tab" data-bs-toggle="tab" data-bs-target="#asociar-existente" type="button" role="tab">Asociar Producto Existente</button>
+                <button class="nav-link active" id="identificacion-tab" data-bs-toggle="tab" data-bs-target="#identificacion-pane" type="button" role="tab">1. Identificación y contacto</button>
             </li>
-            {% if perms.productos.add_producto %}
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="crear-nuevo-tab" data-bs-toggle="tab" data-bs-target="#crear-nuevo" type="button" role="tab">Crear y Asociar Nuevo Producto</button>
+                <button class="nav-link" id="direccion-tab" data-bs-toggle="tab" data-bs-target="#direccion-pane" type="button" role="tab">2. Dirección y comercial</button>
+            </li>
+            {% if editando and perms.proveedores.change_proveedor %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="productos-tab" data-bs-toggle="tab" data-bs-target="#productos-pane" type="button" role="tab">3. Productos Asociados</button>
             </li>
             {% endif %}
         </ul>
-        
-        <div class="tab-content tab-content-inner" id="tabProductosInternaContent">
 
-            <!-- Pestaña 1: FORMULARIO 2 (Asociar Existente) -->
-            <div class="tab-pane fade show active" id="asociar-existente" role="tabpanel">
-                <div class="card shadow-sm mb-4 mt-3">
-                    <div class="card-body">
-                        <h6 class="card-title">Asociar Producto Existente</h6>
-                            
-                            <!-- Los campos de este formulario ahora apuntan a "associate-existing-form" -->
-                            {% if productos_disponibles %}
-                                <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="producto" class="form-label">Producto</label>
-                                    <select name="producto" class="form-select" required form="associate-existing-form">
-                                        <option value="" disabled selected>Seleccionar producto...</option>
-                                        {% for producto in productos_disponibles %}
-                                            <option value="{{ producto.id }}">{{ producto.nombre }} (SKU: {{ producto.sku }})</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            
-                                <div class="col-md-3">
-                                    <label for="{{ pp_form_existente.costo.id_for_label }}" class="form-label">{{ pp_form_existente.costo.label }}</label>
-                                    {{ pp_form_existente.costo|attr:"form:associate-existing-form" }}
-                                    {{ pp_form_existente.costo.errors }}
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="{{ pp_form_existente.lead_time_dias.id_for_label }}" class="form-label">{{ pp_form_existente.lead_time_dias.label }}</label>
-                                    {{ pp_form_existente.lead_time_dias|attr:"form:associate-existing-form" }}
-                                    {{ pp_form_existente.lead_time_dias.errors }}
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="{{ pp_form_existente.min_lote.id_for_label }}" class="form-label">{{ pp_form_existente.min_lote.label }}</label>
-                                    {{ pp_form_existente.min_lote|attr:"form:associate-existing-form" }}
-                                    {{ pp_form_existente.min_lote.errors }}
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="{{ pp_form_existente.descuento_pct.id_for_label }}" class="form-label">Descuento (%)</label>
-                                    {{ pp_form_existente.descuento_pct|attr:"form:associate-existing-form" }}
-                                </div>
-                                <div class="col-md-3 d-flex align-items-end">
-                                    <div class="form-check form-switch">
-                                        {{ pp_form_existente.preferente|attr:"form:associate-existing-form" }}
-                                        <label class="form-check-label" for="{{ pp_form_existente.preferente.id_for_label }}">Preferente</label>
-                                    </div>
-                                </div>
-                            
-                                <div class="col-12 text-end">
-                                    <button type="submit" name="submit_existente" class="btn btn-success" form="associate-existing-form">Añadir Producto</button>
-                                </div>
-                                </div>
-                            
-                            {% else %}
-                                <div class="col-12">
-                                    <p class="text-muted mb-0">No hay más productos disponibles para asociar.</p>
-                                </div>
-                            {% endif %}
+        <form id="main-provider-form" 
+              method="POST" 
+              action="{% if editando %}{% url 'editar_proveedor' proveedor_id=proveedor_a_editar.id %}{% else %}{% url 'modulo_proveedores' %}{% endif %}" 
+              novalidate>
+            {% csrf_token %}
+        </form>
+
+        {% if editando %}
+            <form id="associate-existing-form" method="POST" action="{% url 'asociar_producto_proveedor' proveedor_id=proveedor_a_editar.id %}" novalidate>
+                {% csrf_token %}
+            </form>
+            <form id="associate-new-form" method="POST" action="{% url 'asociar_producto_proveedor' proveedor_id=proveedor_a_editar.id %}" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+            </form>
+        {% endif %}
+
+        <div class="tab-content" id="supplierTabContent">
+            
+            <div class="tab-pane fade show active" id="identificacion-pane" role="tabpanel">
+                 {% if form.non_field_errors %}
+                    <div class="alert alert-danger mt-3">{{ form.non_field_errors }}</div>
+                 {% endif %}
+
+                 <fieldset {% if editando and not perms.proveedores.change_proveedor %}disabled{% elif not editando and not perms.proveedores.add_proveedor %}disabled{% endif %}>
+                    <h6 class="mt-4 text-muted border-bottom pb-2">Identificación Legal</h6>
+                    <div class="row mb-3 mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label">RUT/NIF</label>
+                            {{ form.rut_nif|attr:"form:main-provider-form" }}
+                            <div class="text-danger small">{{ form.rut_nif.errors|striptags }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Razón Social</label>
+                            {{ form.razon_social|attr:"form:main-provider-form" }}
+                            <div class="text-danger small">{{ form.razon_social.errors|striptags }}</div>
+                        </div>
                     </div>
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre Fantasía</label>
+                        {{ form.nombre_fantasia|attr:"form:main-provider-form" }}
+                    </div>
+
+                    <h6 class="mt-4 text-muted border-bottom pb-2">Contacto General</h6>
+                    <div class="row mb-3 mt-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Email Empresa</label>
+                            {{ form.email|attr:"form:main-provider-form" }}
+                            <div class="text-danger small">{{ form.email.errors|striptags }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Teléfono</label>
+                            {{ form.telefono|attr:"form:main-provider-form" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Sitio Web</label>
+                            {{ form.sitio_web|attr:"form:main-provider-form" }}
+                        </div>
+                    </div>
+
+                    <h6 class="mt-4 text-muted border-bottom pb-2">Contacto Principal (Persona)</h6>
+                    <div class="row mb-3 mt-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Nombre Completo</label>
+                            {{ form.contacto_principal_nombre|attr:"form:main-provider-form" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Email Directo</label>
+                            {{ form.contacto_principal_email|attr:"form:main-provider-form" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Teléfono Directo</label>
+                            {{ form.contacto_principal_telefono|attr:"form:main-provider-form" }}
+                        </div>
+                    </div>
+                 </fieldset>
             </div>
 
-            <!-- Pestaña 2: FORMULARIO 3 (Crear Nuevo) -->
-            {% if perms.productos.add_producto %}
-            <div class="tab-pane fade" id="crear-nuevo" role="tabpanel">
-                <div class="card shadow-sm mb-4 mt-3">
-                    <div class="card-body">
-                        <h6 class="card-title">Crear Nuevo Producto y Asociar</h6>
-                            
-                            <!-- Los campos de este formulario ahora apuntan a "associate-new-form" -->
-                            <div class="row g-3">
-                            <p class="text-muted small">Complete los datos básicos del nuevo producto:</p>
-                            
-                            <div class="col-md-4">
-                                <label for="{{ producto_form.sku.id_for_label }}" class="form-label">SKU (Nuevo)</label>
-                                {{ producto_form.sku|attr:"form:associate-new-form" }}
-                                {{ producto_form.sku.errors }}
-                            </div>
-                            <div class="col-md-8">
-                                <label for="{{ producto_form.nombre.id_for_label }}" class="form-label">Nombre (Nuevo)</label>
-                                {{ producto_form.nombre|attr:"form:associate-new-form" }}
-                                {{ producto_form.nombre.errors }}
-                            </div>
-                            <div class="col-md-4">
-                                <label for="{{ producto_form.categoria.id_for_label }}" class="form-label">Categoría</label>
-                                {{ producto_form.categoria|attr:"form:associate-new-form" }}
-                                {{ producto_form.categoria.errors }}
-                            </div>
-                            <div class="col-md-4">
-                                <label for="{{ producto_form.uom_compra.id_for_label }}" class="form-label">Unidad de Compra</label>
-                                {{ producto_form.uom_compra|attr:"form:associate-new-form" }}
-                            </div>
-                            <div class="col-md-4">
-                                <label for="{{ producto_form.costo_estandar.id_for_label }}" class="form-label">Costo Estándar (Ref.)</label>
-                                {{ producto_form.costo_estandar|attr:"form:associate-new-form" }}
-                            </div>
+            <div class="tab-pane fade" id="direccion-pane" role="tabpanel">
+                <fieldset {% if editando and not perms.proveedores.change_proveedor %}disabled{% elif not editando and not perms.proveedores.add_proveedor %}disabled{% endif %}>
+                    <h6 class="mt-4 text-muted border-bottom pb-2">Ubicación</h6>
+                    <div class="row mb-3 mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Dirección</label>
+                            {{ form.direccion|attr:"form:main-provider-form" }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Ciudad</label>
+                            {{ form.ciudad|attr:"form:main-provider-form" }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">País</label>
+                            {{ form.pais|attr:"form:main-provider-form" }}
+                        </div>
+                    </div>
 
-                            <!-- Campos Ocultos -->
-                            <div class="d-none">
-                                {{ producto_form.uom_venta|attr:"form:associate-new-form" }}
-                                {{ producto_form.factor_conversion|attr:"form:associate-new-form" }}
-                                {{ producto_form.impuesto_iva|attr:"form:associate-new-form" }}
-                                {{ producto_form.stock_actual|attr:"form:associate-new-form" }}
-                                {{ producto_form.stock_minimo|attr:"form:associate-new-form" }}
-                                {{ producto_form.perishable|attr:"form:associate-new-form" }}
-                                {{ producto_form.control_por_lote|attr:"form:associate-new-form" }}
-                                {{ producto_form.control_por_serie|attr:"form:associate-new-form" }}
-                                {{ producto_form.estado|attr:"form:associate-new-form" }}
-                            </div>
+                    <h6 class="mt-4 text-muted border-bottom pb-2">Condiciones Comerciales</h6>
+                    <div class="row mb-3 mt-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Condiciones Pago</label>
+                            {{ form.condiciones_pago|attr:"form:main-provider-form" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Moneda</label>
+                            {{ form.moneda|attr:"form:main-provider-form" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo Proveedor</label>
+                            {{ form.tipo|attr:"form:main-provider-form" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Estado</label>
+                            {{ form.estado|attr:"form:main-provider-form" }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Observaciones</label>
+                            {{ form.observaciones|attr:"form:main-provider-form" }}
+                        </div>
+                    </div>
 
-                            <hr class="my-3">
-                            <p class="text-muted small">Complete los datos de compra a ESTE proveedor (Todos obligatorios):</p>
-                            
-                            <div class="col-md-3">
-                                <label for="{{ pp_form_nuevo.costo.id_for_label }}" class="form-label">{{ pp_form_nuevo.costo.label }}</label>
-                                {{ pp_form_nuevo.costo|attr:"form:associate-new-form" }}
-                                {{ pp_form_nuevo.costo.errors }}
+                    <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+                        {% if editando %}
+                             <a href="{% url 'modulo_proveedores' %}" class="btn btn-secondary me-2">Cancelar</a>
+                             <button type="submit" class="btn btn-primary" form="main-provider-form">Actualizar Datos</button>
+                        {% else %}
+                             <a href="{% url 'modulo_proveedores' %}" class="btn btn-secondary me-2">Limpiar</a>
+                             <button type="submit" class="btn btn-primary" form="main-provider-form">Guardar y Continuar</button>
+                        {% endif %}
+                    </div>
+                </fieldset>
+            </div>
+
+            {% if editando and perms.proveedores.change_proveedor %}
+            <div class="tab-pane fade" id="productos-pane" role="tabpanel">
+                
+                <ul class="nav nav-tabs nav-tabs-inner" id="tabProductosInterna" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" id="asociar-existente-tab" data-bs-toggle="tab" data-bs-target="#asociar-existente" type="button">Asociar Existente</button>
+                    </li>
+                    {% if perms.productos.add_producto %}
+                    <li class="nav-item">
+                        <button class="nav-link" id="crear-nuevo-tab" data-bs-toggle="tab" data-bs-target="#crear-nuevo" type="button">Crear Nuevo</button>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <div class="tab-content tab-content-inner">
+                    <div class="tab-pane fade show active" id="asociar-existente">
+                        <div class="card shadow-sm mt-2 bg-light">
+                            <div class="card-body">
+                                {% if productos_disponibles %}
+                                    <div class="row g-3">
+                                        <div class="col-12 mb-1">
+                                            <label class="form-label small text-muted"><i class="bi bi-search"></i> Filtrar lista de productos:</label>
+                                            <input type="text" id="filtroProductos" class="form-control form-control-sm" placeholder="Escriba el nombre del producto para filtrar el select...">
+                                        </div>
+
+                                        <div class="col-md-12">
+                                            <label class="form-label">Seleccionar Producto</label>
+                                            <select name="producto" id="selectProductos" class="form-select" required form="associate-existing-form" size="5">
+                                                {% for producto in productos_disponibles %}
+                                                    <option value="{{ producto.id }}">{{ producto.nombre }} (SKU: {{ producto.sku }})</option>
+                                                {% endfor %}
+                                            </select>
+                                            <small class="text-muted">Seleccione un producto de la lista.</small>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <label class="form-label">Costo ($)</label>
+                                            {{ pp_form_existente.costo|attr:"form:associate-existing-form" }}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Lead Time (Días)</label>
+                                            {{ pp_form_existente.lead_time_dias|attr:"form:associate-existing-form" }}
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Min. Lote</label>
+                                            {{ pp_form_existente.min_lote|attr:"form:associate-existing-form" }}
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Desc. (%)</label>
+                                            {{ pp_form_existente.descuento_pct|attr:"form:associate-existing-form" }}
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <div class="form-check form-switch mb-2">
+                                                {{ pp_form_existente.preferente|attr:"form:associate-existing-form" }}
+                                                <label class="form-check-label">Preferente</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12 text-end">
+                                            <button type="submit" name="submit_existente" class="btn btn-success" form="associate-existing-form">
+                                                <i class="bi bi-link-45deg"></i> Asociar Producto
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-info mb-0">No hay productos disponibles para asociar (todos están asociados o no existen).</div>
+                                {% endif %}
                             </div>
-                            <div class="col-md-3">
-                                <label for="{{ pp_form_nuevo.lead_time_dias.id_for_label }}" class="form-label">{{ pp_form_nuevo.lead_time_dias.label }}</label>
-                                {{ pp_form_nuevo.lead_time_dias|attr:"form:associate-new-form" }}
-                                {{ pp_form_nuevo.lead_time_dias.errors }}
-                            </div>
-                            <div class="col-md-3">
-                                <label for="{{ pp_form_nuevo.min_lote.id_for_label }}" class="form-label">{{ pp_form_nuevo.min_lote.label }}</label>
-                                {{ pp_form_nuevo.min_lote|attr:"form:associate-new-form" }}
-                                {{ pp_form_nuevo.min_lote.errors }}
-                            </div>
-                            <div class="col-md-3">
-                                <label for="{{ pp_form_nuevo.descuento_pct.id_for_label }}" class="form-label">Descuento (%)</LabeL>
-                                {{ pp_form_nuevo.descuento_pct|attr:"form:associate-new-form" }}
-                            </div>
-                            <div class="col-md-3 d-flex align-items-end">
-                                <div class="form-check form-switch">   
-                                    {{ pp_form_nuevo.preferente|attr:"form:associate-new-form" }}
-                                    <label class="form-check-label" for="{{ pp_form_nuevo.preferente.id_for_label }}">Preferente</label>
+                        </div>
+                    </div>
+
+                    {% if perms.productos.add_producto %}
+                    <div class="tab-pane fade" id="crear-nuevo">
+                         <div class="card shadow-sm mt-2 bg-light">
+                            <div class="card-body">
+                                <h6 class="text-primary">Paso 1: Datos del Producto Nuevo</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">SKU</label>
+                                        {{ producto_form.sku|attr:"form:associate-new-form" }}
+                                        <div class="text-danger small">{{ producto_form.sku.errors|striptags }}</div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label">Nombre</label>
+                                        {{ producto_form.nombre|attr:"form:associate-new-form" }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Categoría</label>
+                                        {{ producto_form.categoria|attr:"form:associate-new-form" }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Unidad Compra</label>
+                                        {{ producto_form.uom_compra|attr:"form:associate-new-form" }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Costo Referencia</label>
+                                        {{ producto_form.costo_estandar|attr:"form:associate-new-form" }}
+                                    </div>
+
+                                    <div class="d-none">
+                                        {{ producto_form.uom_venta|attr:"form:associate-new-form" }}
+                                        {{ producto_form.factor_conversion|attr:"form:associate-new-form" }}
+                                        {{ producto_form.impuesto_iva|attr:"form:associate-new-form" }}
+                                        {{ producto_form.stock_actual|attr:"form:associate-new-form" }}
+                                        {{ producto_form.stock_minimo|attr:"form:associate-new-form" }}
+                                        {{ producto_form.perishable|attr:"form:associate-new-form" }}
+                                        {{ producto_form.control_por_lote|attr:"form:associate-new-form" }}
+                                        {{ producto_form.control_por_serie|attr:"form:associate-new-form" }}
+                                        {{ producto_form.estado|attr:"form:associate-new-form" }}
+                                    </div>
+                                </div>
+
+                                <h6 class="text-primary mt-4">Paso 2: Datos de Compra (Proveedor)</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Costo ($)</label>
+                                        {{ pp_form_nuevo.costo|attr:"form:associate-new-form" }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Lead Time</label>
+                                        {{ pp_form_nuevo.lead_time_dias|attr:"form:associate-new-form" }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Lote Mínimo</label>
+                                        {{ pp_form_nuevo.min_lote|attr:"form:associate-new-form" }}
+                                    </div>
+                                    <div class="col-md-3 text-end pt-4">
+                                        <button type="submit" name="submit_nuevo" class="btn btn-primary" form="associate-new-form">
+                                            Crear y Asociar
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="col-12 text-end">
-                                <button type="submit" name="submit_nuevo" class="btn btn-primary" form="associate-new-form">Crear y Asociar Producto</button>
-                            </div>
-                            </div>
+                         </div>
                     </div>
+                    {% endif %}
+                </div>
+
+                <h6 class="mt-4 border-bottom pb-2">Lista de Productos Asociados</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Costo</th>
+                                <th>Lead Time</th>
+                                <th>Lote Min</th>
+                                <th>Preferente</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pp in productos_asociados %}
+                            <tr id="asociacion-row-{{ pp.id }}">
+                                <td>
+                                    <strong>{{ pp.producto.nombre }}</strong><br>
+                                    <small class="text-muted">SKU: {{ pp.producto.sku }}</small>
+                                </td>
+                                <td>${{ pp.costo|floatformat:2 }}</td>
+                                <td>{{ pp.lead_time_dias }} días</td>
+                                <td>{{ pp.min_lote|floatformat:0 }}</td>
+                                <td>
+                                    {% if pp.preferente %}
+                                        <span class="badge bg-primary">Sí</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-quitar-producto" data-url="{% url 'desasociar_producto_proveedor' pp.id %}">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted">Sin productos asociados.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
             {% endif %}
         </div>
+    </div>
+    {% endif %}
 
-        <!-- Tabla de Productos Ya Asociados -->
-        <h6 class="mt-4">Productos Ya Asociados</h6>
-        <div class="table-responsive">
-            <table class="table table-sm table-striped table-hover">
+    <div class="card">
+        <div class="card-header">
+            <h5>Directorio de Proveedores</h5>
+            {% if perms.proveedores.view_proveedor %}
+            <a href="{% url 'exportar_excel_proveedores' %}?q={{ query|default:'' }}" class="btn btn-success btn-sm">
+                <i class="bi bi-file-excel"></i> Exportar
+            </a>
+            {% endif %}
+        </div>
+
+        <form id="formFiltros" method="GET" action="{% url 'modulo_proveedores' %}" class="mb-3">
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" 
+                               class="form-control" 
+                               id="inputBusqueda" 
+                               name="q" 
+                               placeholder="Escribe para buscar automáticamente..." 
+                               value="{{ query|default:'' }}"
+                               autocomplete="off">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="page_size" id="selectPageSize" class="form-select">
+                        <option value="5" {% if page_size == 5 %}selected{% endif %}>5 registros</option>
+                        <option value="10" {% if page_size == 10 %}selected{% endif %}>10 registros</option>
+                        <option value="25" {% if page_size == 25 %}selected{% endif %}>25 registros</option>
+                    </select>
+                </div>
+                <div class="col-md-2 offset-md-2">
+                    <a href="{% url 'modulo_proveedores' %}?limpiar=True" class="btn btn-outline-secondary w-100">Limpiar</a>
+                </div>
+            </div>
+        </form>
+
+        <div class="table-responsive" id="contenedorTabla">
+            <table class="table table-hover">
                 <thead class="table-light">
                     <tr>
-                        <th>Producto (SKU)</th>
-                        <th>Costo</th>
-                        <th>Lead Time (días)</th>
-                        <th>Lote Mínimo</th>
-                        <th>Descuento (%)</th>
-                        <th>Preferente</th>
-                        <th>Acción</th>
+                        {% with params="page_size="|add:page_size|stringformat:"s"|add:"&q="|add:query %}
+                        <th>
+                            <a href="?sort=rut_nif&dir={% if sort_by == 'rut_nif' and direction == 'asc' %}desc{% else %}asc{% endif %}&{{ params }}" class="orden-link text-decoration-none text-dark">
+                                RUT {% if sort_by == 'rut_nif' %}<i class="bi bi-caret-{% if direction == 'asc' %}up{% else %}down{% endif %}-fill"></i>{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?sort=razon_social&dir={% if sort_by == 'razon_social' and direction == 'asc' %}desc{% else %}asc{% endif %}&{{ params }}" class="orden-link text-decoration-none text-dark">
+                                Razón Social {% if sort_by == 'razon_social' %}<i class="bi bi-caret-{% if direction == 'asc' %}up{% else %}down{% endif %}-fill"></i>{% endif %}
+                            </a>
+                        </th>
+                        <th>Estado</th>
+                        <th>Email</th>
+                        <th class="text-end">Acciones</th>
+                        {% endwith %}
                     </tr>
                 </thead>
-                <tbody>
-                    {% for pp in productos_asociados %}
-                    <tr id="asociacion-row-{{ pp.id }}">
-                        <td>{{ pp.producto.nombre }} ({{ pp.producto.sku }})</td>
-                        <td>${{ pp.costo | floatformat:2 }}</td>
-                        <td>{{ pp.lead_time_dias }}</td>
-                        <td>{{ pp.min_lote | floatformat:2 }}</td>
+                <tbody id="tablaResultadosBody">
+                    {% for p in page_obj %}
+                    <tr>
+                        <td>{{ p.rut_nif }}</td>
                         <td>
-                            {% if pp.descuento_pct %}
-                                {{ pp.descuento_pct | floatformat:2 }}%
-                            {% else %}
-                                -
-                            {% endif %}
+                            {{ p.razon_social }}
+                            {% if p.nombre_fantasia %}<br><small class="text-muted">{{ p.nombre_fantasia }}</small>{% endif %}
                         </td>
-                        <td>{% if pp.preferente %}<span class="badge bg-primary">Sí</span>{% else %}No{% endif %}</td>
                         <td>
+                            {% if p.estado == 'activo' %}<span class="badge badge-active">ACTIVO</span>
+                            {% elif p.estado == 'bloqueado' %}<span class="badge badge-blocked">BLOQUEADO</span>
+                            {% else %}<span class="badge bg-secondary">{{ p.estado }}</span>{% endif %}
+                        </td>
+                        <td>{{ p.email }}</td>
+                        <td class="text-end">
                             {% if perms.proveedores.change_proveedor %}
-                            <button type="button" 
-                                    class="btn btn-outline-danger btn-sm btn-quitar-producto"
-                                    data-url="{% url 'desasociar_producto_proveedor' pp.id %}">
-                                Quitar
-                            </button>
+                            <a href="{% url 'editar_proveedor' p.id %}" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
+                            {% endif %}
+                            {% if perms.proveedores.delete_proveedor %}
+                            <button class="btn btn-sm btn-danger btn-eliminar-proveedor" data-url="{% url 'eliminar_proveedor' p.id %}"><i class="bi bi-trash"></i></button>
                             {% endif %}
                         </td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center">Este proveedor aún no tiene productos asociados.</td>
-                    </tr>
+                    <tr><td colspan="5" class="text-center py-4 text-muted">No se encontraron resultados.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         
-    </div>
-    {% endif %}
-    
-</div> <!-- Fin de .tab-content -->
-
-
-</div>
-{% endif %}
-<!-- FIN DEL CARD DEL FORMULARIO -->
-
-
-<!-- ================= LISTADO DE PROVEEDORES ================= -->
-<div class="card">
-<div class="card-header">
-<h5>Proveedores Registrados</h5>
-{% if perms.proveedores.view_proveedor %}
-<a href="{% url 'exportar_excel_proveedores' %}?q={{ query|default:'' }}" class="btn btn-success">
-    <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
-</a>
-{% endif %}
-</div>
-
-<form method="GET" action="{% url 'modulo_proveedores' %}" class="mb-3">
-    <div class="row g-3 align-items-center">
-         <div class="col-md-5">
-            <label for="q" class="visually-hidden">Buscar</label>
-            <input type="text" class="form-control" name="q" id="q" placeholder="Buscar por RUT/NIF o razón..." value="{{ query | default:'' }}">
-         </div>
-         <div class="col-md-3">
-            <label for="page_size" class="visually-hidden">Resultados por página</label>
-            <select name="page_size" id="page_size" class="form-select" onchange="this.form.submit()">
-                <option value="5" {% if page_size == 5 %}selected{% endif %}>Mostrar 5</option>
-                <option value="10" {% if page_size == 10 %}selected{% endif %}>Mostrar 10</option>
-                <option value="25" {% if page_size == 25 %}selected{% endif %}>Mostrar 25</option>
-                <option value="50" {% if page_size == 50 %}selected{% endif %}>Mostrar 50</option>
-            </select>
-         </div>
-         <div class="col-md-2">
-             <button type="submit" class="btn btn-primary w-100">Buscar</button>
-         </div>
-         <div class="col-md-2">
-            <a href="{% url 'modulo_proveedores' %}" class="btn btn-outline-secondary w-100">Limpiar</a>
-        </div>
-    </div>
-</form>
-
-<div class="table-responsive">
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>
-                    <a href="?page={{ page_obj.number }}&page_size={{ page_size }}&sort=rut_nif&dir={% if sort_by == 'rut_nif' and direction == 'asc' %}desc{% else %}asc{% endif %}{% if query %}&q={{ query }}{% endif %}">
-                        RUT/NIF
-                        {% if sort_by == 'rut_nif' %}
-                            <i class="bi bi-caret-{% if direction == 'asc' %}up{% else %}down{% endif %}-fill"></i>
-                        {% endif %}
-                    </a>
-                </th>
-                <th>
-                    <a href="?page={{ page_obj.number }}&page_size={{ page_size }}&sort=razon_social&dir={% if sort_by == 'razon_social' and direction == 'asc' %}desc{% else %}asc{% endif %}{% if query %}&q={{ query }}{% endif %}">
-                        Razón social
-                        {% if sort_by == 'razon_social' %}
-                            <i class="bi bi-caret-{% if direction == 'asc' %}up{% else %}down{% endif %}-fill"></i>
-                        {% endif %}
-                    </a>
-                </th>
-                <th>
-                    <a href="?page={{ page_obj.number }}&page_size={{ page_size }}&sort=estado&dir={% if sort_by == 'estado' and direction == 'asc' %}desc{% else %}asc{% endif %}{% if query %}&q={{ query }}{% endif %}">
-                        Estado
-                        {% if sort_by == 'estado' %}
-                            <i class="bi bi-caret-{% if direction == 'asc' %}up{% else %}down{% endif %}-fill"></i>
-                        {% endif %}
-                    </a>
-                </th>
-                <th>Email</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for proveedor in page_obj %}
-            <tr id="proveedor-row-{{ proveedor.id }}">
-                <td>{{ proveedor.rut_nif }}</td>
-                <td>{{ proveedor.razon_social }}</td>
-                <td>
-                    {% if proveedor.estado == 'ACTIVO' %}
-                        <span class="badge badge-active">ACTIVO</span>
-                    {% elif proveedor.estado == 'BLOQUEADO' %}
-                        <span class="badge badge-blocked">BLOQUEADO</span>
+        <div id="paginacionContainer" class="border-top pt-3">
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Navegación de páginas">
+                <ul class="pagination justify-content-center">
+                    {% with params="page_size="|add:page_size|stringformat:"s"|add:"&sort="|add:sort_by|add:"&dir="|add:direction|add:"&q="|add:query %}
+                    
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link ajax-link" href="?page={{ page_obj.previous_page_number }}&{{ params }}">Anterior</a>
+                        </li>
                     {% else %}
-                        <span class="badge bg-secondary">{{ proveedor.get_estado_display }}</span>
-                    {% endif %}
-                </td>
-                <td>{{ proveedor.email }}</td>
-                <td>
-                    {% if perms.proveedores.change_proveedor %}
-                    <a href="{% url 'editar_proveedor' proveedor.id %}" class="btn btn-sm btn-warning">
-                        <i class="bi bi-pencil-fill"></i>
-                    </a>
+                        <li class="page-item disabled"><span class="page-link">Anterior</span></li>
                     {% endif %}
                     
-                    {% if perms.proveedores.delete_proveedor %}
-                    <button type="button" 
-                            class="btn btn-sm btn-danger btn-eliminar-proveedor" 
-                            data-url="{% url 'eliminar_proveedor' proveedor.id %}">
-                        <i class="bi bi-trash-fill"></i>
-                    </button>
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                        {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link ajax-link" href="?page={{ i }}&{{ params }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link ajax-link" href="?page={{ page_obj.next_page_number }}&{{ params }}">Siguiente</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
                     {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" class="text-center">No hay proveedores registrados{% if query %} que coincidan con la búsqueda{% endif %}.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    
+                    {% endwith %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+
 </div>
 
-<!-- Paginación -->
-{% if page_obj.has_other_pages %}
-    <nav aria-label="Navegación de páginas" class="mt-4">
-        <ul class="pagination justify-content-center">
-            
-            {% with base_params=page_size|stringformat:"s"|add:"&sort="|add:sort_by|add:"&dir="|add:direction %}
-            
-            {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page=1&page_size={{ base_params }}{% if query %}&q={{ query }}{% endif %}">&laquo; Primero</a></li>
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&page_size={{ base_params }}{% if query %}&q={{ query }}{% endif %}">Anterior</a></li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">&laquo; Primero</span></li>
-                <li class="page-item disabled"><span class="page-link">Anterior</span></li>
-            {% endif %}
-            
-            <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
-            
-            {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&page_size={{ base_params }}{% if query %}&q={{ query }}{% endif %}">Siguiente</a></li>
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&page_size={{ base_params }}{% if query %}&q={{ query }}{% endif %}">Último &raquo;</a></li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
-                <li class="page-item disabled"><span class="page-link">Último &raquo;</span></li>
-            {% endif %}
-            
-            {% endwith %}
-        </ul>
-    </nav>
-{% endif %}
-
-</div>
-<!-- FIN DEL CARD DEL LISTADO -->
-
-
-</div> <!-- Fin de .main-container -->
-
-<!-- 
-====================================================================
-SCRIPT DE SWEETALERT (EDITADO PARA FETCH)
-====================================================================
--->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
-    // --- 1. Alertas de Notificación (Toast) ---
-    const messageItems = document.querySelectorAll('.django-message-item');
-    messageItems.forEach(function(item, index) {
-        const level = item.dataset.level;
-        const message = item.dataset.message;
-        
-        let icon = 'info';
-        let title = 'Notificación';
-        
-        if (level.includes('success')) {
-            icon = 'success';
-            title = '¡Éxito!';
-        } else if (level.includes('error')) {
-            icon = 'error';
-            title = '¡Error!';
-        } else if (level.includes('warning')) {
-            icon = 'warning';
-            title = 'Advertencia';
-        }
-
-        setTimeout(() => {
-            Swal.fire({
-                title: title,
-                text: message,
-                icon: icon,
-                timer: 4000,
-                timerProgressBar: true,
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false
-            });
-        }, index * 500);
-    });
-
-    // --- Obtener el token CSRF del formulario principal ---
-    let csrfToken = document.querySelector('#main-provider-form [name="csrfmiddlewaretoken"]')?.value;
-    if (!csrfToken) {
-        csrfToken = document.querySelector('#associate-existing-form [name="csrfmiddlewaretoken"]')?.value;
-    }
-    if (!csrfToken) {
-        csrfToken = document.querySelector('#associate-new-form [name="csrfmiddlewaretoken"]')?.value;
-    }
-    if (!csrfToken) {
-         // Fallback final
-        csrfToken = document.querySelector('form[method="POST"] [name="csrfmiddlewaretoken"]')?.value;
-    }
     
-    if (!csrfToken) {
-        console.error("Error Crítico: No se encontró el token CSRF. Los formularios de eliminación no funcionarán.");
-    }
-    // --- Fin Corrección (Bug 2) ---
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    // --- 2. Confirmación para Eliminar Proveedor (Tabla Principal) ---
-    document.body.addEventListener('click', function(event) {
-        const deleteButton = event.target.closest('.btn-eliminar-proveedor');
-        if (deleteButton) {
-            event.preventDefault(); 
-            const url = deleteButton.dataset.url; 
-            const fila = deleteButton.closest('tr');
-            
-            Swal.fire({
-                title: '¿Estás seguro?',
-                text: "¡Eliminarás al proveedor completo! No podrás revertir esto.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, ¡eliminar proveedor!',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': csrfToken,
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            Swal.fire('¡Eliminado!', data.message, 'success');
-                            if (fila) fila.remove(); 
-                        } else {
-                            Swal.fire('Error', data.message, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error en fetch:", error);
-                        Swal.fire('Error', 'No se pudo conectar al servidor.', 'error');
-                    });
-                }
-            });
-        }
-    });
+    // --- 1. CONFIGURACIÓN DEL BUSCADOR Y PAGINADOR AJAX ---
+    const inputBusqueda = document.getElementById('inputBusqueda');
+    const selectPageSize = document.getElementById('selectPageSize');
+    const tablaBody = document.getElementById('tablaResultadosBody');
+    const paginacionContainer = document.getElementById('paginacionContainer');
+    let timeoutBusqueda = null;
 
-    // --- 3. Confirmación para Quitar Producto (Tab 3) ---
-    const tab3Container = document.querySelector('#productos-pane');
-    if (tab3Container) {
-        tab3Container.addEventListener('click', function(event) {
-            
-            const button = event.target.closest('.btn-quitar-producto');
-            if (button) {
-                event.preventDefault(); 
-                const url = button.dataset.url; 
-                const fila = button.closest('tr');
+    // Función principal para cargar datos vía FETCH
+    function cargarDatosDinamicos(url) {
+        // Actualizamos URL del navegador
+        window.history.pushState({path: url}, '', url);
+
+        fetch(url)
+            .then(response => response.text())
+            .then(htmlTexto => {
+                const parser = new DOMParser();
+                const docVirtual = parser.parseFromString(htmlTexto, 'text/html');
                 
+                // 1. Reemplazar cuerpo de la tabla
+                const nuevoTbody = docVirtual.getElementById('tablaResultadosBody');
+                if (nuevoTbody && tablaBody) {
+                    tablaBody.innerHTML = nuevoTbody.innerHTML;
+                }
+
+                // 2. Reemplazar paginación completa
+                const nuevaPaginacion = docVirtual.getElementById('paginacionContainer');
+                if (nuevaPaginacion && paginacionContainer) {
+                    paginacionContainer.innerHTML = nuevaPaginacion.innerHTML;
+                }
+                
+                // 3. Reconectar eventos a los nuevos elementos
+                reconectarEventos();
+            })
+            .catch(error => console.error('Error AJAX:', error));
+    }
+
+    // Evento: Escribir en el buscador (con retardo de 400ms)
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener('input', function() {
+            clearTimeout(timeoutBusqueda);
+            timeoutBusqueda = setTimeout(() => {
+                const query = inputBusqueda.value;
+                const pageSize = selectPageSize ? selectPageSize.value : 10;
+                const url = `{% url 'modulo_proveedores' %}?q=${encodeURIComponent(query)}&page_size=${pageSize}`;
+                cargarDatosDinamicos(url);
+            }, 400);
+        });
+    }
+
+    // Evento: Cambiar tamaño de página
+    if (selectPageSize) {
+        selectPageSize.addEventListener('change', function() {
+            const query = inputBusqueda.value;
+            const pageSize = this.value;
+            const url = `{% url 'modulo_proveedores' %}?q=${encodeURIComponent(query)}&page_size=${pageSize}`;
+            cargarDatosDinamicos(url);
+        });
+    }
+
+    // Función para reconectar listeners después de la carga AJAX
+    function reconectarEventos() {
+        // A) Paginación y Ordenamiento via AJAX
+        document.querySelectorAll('.ajax-link, .orden-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault(); // Evitamos recarga
+                const url = this.getAttribute('href');
+                cargarDatosDinamicos(url);
+            });
+        });
+
+        // B) Botones de Eliminar
+        document.querySelectorAll('.btn-eliminar-proveedor').forEach(btn => {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            newBtn.addEventListener('click', function() {
                 Swal.fire({
-                    title: '¿Quitar Producto?',
-                    text: "El producto será desasociado de este proveedor.",
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6', // Azul para acción reversible
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Sí, quitar',
-                    cancelButtonText: 'Cancelar'
+                    title: '¿Eliminar Proveedor?', text: "Esta acción no se puede deshacer.", icon: 'warning',
+                    showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, eliminar'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        
-                        fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': csrfToken, 
-                                'Content-Type': 'application/json'
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                Swal.fire('¡Quitado!', data.message, 'success');
-                                if (fila) fila.remove(); 
-                                // Recargamos la página para que el producto
-                                // re-aparezca en la lista de "disponibles".
-                                location.reload();
+                        fetch(this.dataset.url, {
+                            method: 'POST', headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'}
+                        }).then(r => r.json()).then(data => {
+                            if(data.status === 'success') {
+                                const query = inputBusqueda.value;
+                                const pageSize = selectPageSize.value;
+                                const url = `{% url 'modulo_proveedores' %}?q=${encodeURIComponent(query)}&page_size=${pageSize}`;
+                                Swal.fire('Eliminado', data.message, 'success').then(() => cargarDatosDinamicos(url));
                             } else {
                                 Swal.fire('Error', data.message, 'error');
                             }
-                        })
-                        .catch(error => {
-                            console.error("Error en fetch:", error);
-                            Swal.fire('Error', 'No se pudo conectar al servidor.', 'error');
                         });
                     }
                 });
-            }
-        });
-    }
-
-    // --- 4. (OPCIONAL) Recordar la pestaña activa ---
-    if (document.body.querySelector('#productos-tab')) {
-        const activeTab = localStorage.getItem('activeSupplierTab');
-        if (activeTab) {
-            const tabButton = document.querySelector(activeTab);
-            if (tabButton) {
-                const tab = new bootstrap.Tab(tabButton);
-                tab.show();
-            }
-        }
-        const tabButtons = document.querySelectorAll('#supplierTab button[data-bs-toggle="tab"]');
-        tabButtons.forEach(button => {
-            button.addEventListener('shown.bs.tab', function(event) {
-                localStorage.setItem('activeSupplierTab', `[data-bs-target="${event.target.dataset.bsTarget}"]`);
             });
         });
-    } else {
-        localStorage.removeItem('activeSupplierTab');
     }
+    
+    // Inicializar eventos al cargar
+    reconectarEventos();
 
+    // --- 2. NOTIFICACIONES TOAST ---
+    const messages = document.querySelectorAll('.django-message-item');
+    messages.forEach((m, i) => {
+        let icon = m.dataset.level.includes('error') ? 'error' : 'success';
+        setTimeout(() => {
+            Swal.fire({ toast: true, position: 'top-end', icon: icon, title: m.dataset.message, showConfirmButton: false, timer: 3000 });
+        }, i * 500);
+    });
+
+    // --- 3. FILTRO LOCAL DE PRODUCTOS (TAB 3) ---
+    const inputFiltro = document.getElementById('filtroProductos');
+    const selectProductos = document.getElementById('selectProductos');
+    if(inputFiltro && selectProductos) {
+        const opcionesOriginales = Array.from(selectProductos.options);
+        inputFiltro.addEventListener('keyup', function(e) {
+            const texto = e.target.value.toLowerCase();
+            selectProductos.innerHTML = '';
+            const opcionesFiltradas = opcionesOriginales.filter(opt => opt.text.toLowerCase().includes(texto));
+            if(opcionesFiltradas.length > 0) opcionesFiltradas.forEach(opt => selectProductos.add(opt));
+            else selectProductos.add(new Option("No se encontraron productos", "", false, false));
+        });
+    }
+    
+    // --- 4. QUITAR PRODUCTO (TAB 3) ---
+    document.querySelectorAll('.btn-quitar-producto').forEach(btn => {
+        btn.addEventListener('click', function() {
+            Swal.fire({ title: '¿Desasociar?', text: "El producto volverá a la lista de disponibles.", icon: 'question', showCancelButton: true, confirmButtonColor: '#3085d6', confirmButtonText: 'Sí, quitar' })
+            .then((result) => {
+                if (result.isConfirmed) {
+                    fetch(this.dataset.url, { method: 'POST', headers: {'X-CSRFToken': csrfToken} })
+                    .then(r => r.json()).then(data => {
+                        if(data.status === 'success') location.reload();
+                        else Swal.fire('Error', data.message, 'error');
+                    });
+                }
+            });
+        });
+    });
+
+    // --- 5. RECORDAR PESTAÑA ACTIVA ---
+    const tabEl = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabEl.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function (event) { localStorage.setItem('activeTabProveedores', event.target.id); });
+    });
+    const activeTabId = localStorage.getItem('activeTabProveedores');
+    if(activeTabId) {
+        const tabTrigger = document.getElementById(activeTabId);
+        if(tabTrigger) { const tab = new bootstrap.Tab(tabTrigger); tab.show(); }
+    }
 });
 </script>
 
