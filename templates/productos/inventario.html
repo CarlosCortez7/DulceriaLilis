@@ -22,6 +22,29 @@
     .table .badge { font-size: 0.8em; padding: 0.4em 0.7em; }
     .badge-success { background-color: #28a745; }
     .badge-danger { background-color: #dc3545; }
+    
+    /* Mejoras visuales para los controles de búsqueda y filtros */
+    .form-select:focus, .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    }
+    
+    #buscarMovimiento {
+        border-left: none;
+    }
+    
+    .input-group-text {
+        border-right: none;
+    }
+    
+    #btnLimpiarBusqueda, #btnLimpiarFiltros {
+        transition: all 0.2s ease;
+    }
+    
+    #btnLimpiarBusqueda:hover, #btnLimpiarFiltros:hover {
+        background-color: #f8f9fa;
+        transform: scale(1.05);
+    }
 </style>
 
 <div class="main-container">
@@ -89,27 +112,62 @@
             </a>
         </div>
 
-        <!-- === BUSCADOR Y FILTROS === -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="input-group" style="max-width: 500px;">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" id="buscarMovimiento" class="form-control" placeholder="Buscar por producto, SKU o usuario...">
+        <!-- === BUSCADOR, FILTROS Y SELECTOR DE PÁGINA === -->
+        <div class="mb-3">
+            <!-- Fila 1: Selector de página y Buscador -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <!-- 🔥 SELECTOR DE REGISTROS POR PÁGINA -->
+                <div class="d-flex align-items-center">
+                    <label class="form-label mb-0 me-2">Mostrar:</label>
+                    <select id="pageSizeSelector" class="form-select" style="width: 90px;">
+                        {% for size in page_size_options %}
+                            <option value="{{ size }}" {% if size == page_size %}selected{% endif %}>
+                                {{ size }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <span class="text-muted ms-2 small">registros por página</span>
+                </div>
+
+                <!-- 🔍 BUSCADOR -->
+                <div class="input-group" style="max-width: 450px;">
+                    <span class="input-group-text bg-white">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" 
+                           id="buscarMovimiento" 
+                           class="form-control" 
+                           placeholder="Buscar por producto, SKU o usuario...">
+                    <button class="btn btn-outline-secondary" type="button" id="btnLimpiarBusqueda">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
             </div>
 
-            <div class="d-flex">
-                <select id="filtroTipo" class="form-select me-2" style="width: 180px;">
+            <!-- Fila 2: Filtros -->
+            <div class="d-flex justify-content-end align-items-center gap-2">
+                <label class="form-label mb-0 me-2">Filtrar por:</label>
+                
+                <!-- 🔎 FILTRO TIPO -->
+                <select id="filtroTipo" class="form-select" style="width: 180px;">
                     <option value="">Todos los tipos</option>
-                    <option value="INGRESO">Ingreso</option>
-                    <option value="SALIDA">Salida</option>
-                    <option value="AJUSTE">Ajuste</option>
+                    <option value="INGRESO">✅ Ingreso</option>
+                    <option value="SALIDA">❌ Salida</option>
+                    <option value="AJUSTE">⚙️ Ajuste</option>
                 </select>
 
+                <!-- 🔎 FILTRO USUARIO -->
                 <select id="filtroUsuario" class="form-select" style="width: 180px;">
                     <option value="">Todos los usuarios</option>
                     {% for u in usuarios %}
                         <option value="{{ u.username }}">{{ u.username }}</option>
                     {% endfor %}
                 </select>
+
+                <!-- 🔄 BOTÓN LIMPIAR FILTROS -->
+                <button class="btn btn-outline-secondary" type="button" id="btnLimpiarFiltros" title="Limpiar filtros">
+                    <i class="bi bi-arrow-counterclockwise"></i> Resetear
+                </button>
             </div>
         </div>
 
@@ -165,29 +223,75 @@
             </table>
         </div>
 
-        <!-- 🔹 PAGINADOR -->
+        <!-- 🔹 PAGINADOR MEJORADO -->
         <nav aria-label="Paginación de movimientos" class="mt-4">
             <ul class="pagination justify-content-center mb-0">
+                <!-- Botón Anterior -->
                 {% if movimientos.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page={{ movimientos.previous_page_number }}">Anterior</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1&page_size={{ page_size }}" title="Primera página">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ movimientos.previous_page_number }}&page_size={{ page_size }}">Anterior</a>
+                    </li>
                 {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
+                    </li>
                     <li class="page-item disabled"><span class="page-link">Anterior</span></li>
                 {% endif %}
 
+                <!-- Números de página con rango limitado -->
                 {% for num in movimientos.paginator.page_range %}
-                    {% if movimientos.number == num %}
-                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                    {% else %}
-                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% if num == 1 or num == movimientos.paginator.num_pages %}
+                        <!-- Siempre mostrar primera y última página -->
+                        <li class="page-item {% if movimientos.number == num %}active{% endif %}">
+                            {% if movimientos.number == num %}
+                                <span class="page-link">{{ num }}</span>
+                            {% else %}
+                                <a class="page-link" href="?page={{ num }}&page_size={{ page_size }}{{ request.GET.urlencode|slice:'1:' }}">{{ num }}</a>
+                            {% endif %}
+                        </li>
+                    {% elif num >= movimientos.number|add:'-2' and num <= movimientos.number|add:'2' %}
+                        <!-- Mostrar 2 páginas antes y después de la actual -->
+                        <li class="page-item {% if movimientos.number == num %}active{% endif %}">
+                            {% if movimientos.number == num %}
+                                <span class="page-link">{{ num }}</span>
+                            {% else %}
+                                <a class="page-link" href="?page={{ num }}&page_size={{ page_size }}{{ request.GET.urlencode|slice:'1:' }}">{{ num }}</a>
+                            {% endif %}
+                        </li>
+                    {% elif num == movimientos.number|add:'-3' or num == movimientos.number|add:'3' %}
+                        <!-- Mostrar puntos suspensivos -->
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
                     {% endif %}
                 {% endfor %}
 
+                <!-- Botón Siguiente -->
                 {% if movimientos.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ movimientos.next_page_number }}">Siguiente</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ movimientos.next_page_number }}&page_size={{ page_size }}">Siguiente</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ movimientos.paginator.num_pages }}&page_size={{ page_size }}" title="Última página">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
                 {% else %}
                     <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="bi bi-chevron-double-right"></i></span>
+                    </li>
                 {% endif %}
             </ul>
+            
+            <!-- Información de página actual -->
+            <div class="text-center mt-2 text-muted small">
+                Página {{ movimientos.number }} de {{ movimientos.paginator.num_pages }} 
+                ({{ movimientos.paginator.count }} registros totales)
+            </div>
         </nav>
     </div>
 </div>
@@ -225,6 +329,35 @@ $(window).on('load', function() {
             }
         });
     }
+
+    // === LIMPIAR BÚSQUEDA ===
+    $('#btnLimpiarBusqueda').on('click', function() {
+        $('#buscarMovimiento').val('');
+        $('#buscarMovimiento').trigger('input');
+    });
+
+    // === LIMPIAR FILTROS ===
+    $('#btnLimpiarFiltros').on('click', function() {
+        $('#filtroTipo').val('');
+        $('#filtroUsuario').val('');
+        $('#buscarMovimiento').val('');
+        $('#buscarMovimiento').trigger('input');
+    });
+
+    // === CAMBIO DE PAGE SIZE PRESERVANDO FILTROS ===
+    $('#pageSizeSelector').on('change', function() {
+        const pageSize = $(this).val();
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Actualizar page_size
+        urlParams.set('page_size', pageSize);
+        
+        // Resetear a página 1 cuando se cambia el tamaño
+        urlParams.set('page', '1');
+        
+        // Redirigir con todos los parámetros
+        window.location.href = '?' + urlParams.toString();
+    });
 
     // === CONFIRMAR GUARDADO ===
     $('#btnGuardar').on('click', function (e) {
