@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect, get_object_or_404
-# Importa Q para búsquedas OR y los modelos necesarios
 from django.db.models import Q, Sum
 from .models import Producto, Categoria, MEDIDA_CHOICES, MovimientoInventario
 from django.contrib import messages
@@ -7,13 +6,17 @@ from .forms import ProductoForm, MovimientoInventarioForm, CategoriaForm
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.template.loader import render_to_string
 from django.http import JsonResponse, HttpResponse
-from django.core.paginator import Paginator, EmptyPage,PageNotAnInteger
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import openpyxl
 from django.utils import timezone
 from datetime import timedelta
-from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from usuarios.decorators import solo_inventario
+
+# --- FILTRO DE SEGURIDAD PARA ADMIN ---
+def solo_admin(user):
+    """Retorna True solo si el usuario es Admin o Superusuario."""
+    return user.is_authenticated and (user.rol == 'admin' or user.is_superuser)
 
 # Create your views here.
 
@@ -26,7 +29,12 @@ def home(request):
     productos = Producto.objects.filter(estado='activo').order_by('nombre')
 
     # Manejo del formulario de nuevo producto
+    # Opcional: Si solo admin agrega desde home, protege este bloque
     if request.method == "POST":
+        if not solo_admin(request.user):
+             messages.warning(request, "No tienes permiso para realizar esta acción.")
+             return redirect('home')
+             
         form = ProductoForm(request.POST, request.FILES or None)
         if form.is_valid():
             form.save()
@@ -64,6 +72,8 @@ def home(request):
 
     return render(request, 'productos/home.html', context)
 
+@login_required
+@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
 def agregar_producto(request):
     if request.method == 'POST':
         form = ProductoForm(request.POST, request.FILES or None)
@@ -124,7 +134,14 @@ def cart_detail(request):
 
     return render(request, 'productos/cart_detail.html', {'cart_items': cart_items, 'total_general': total_general})
 
+# --- GESTIÓN DE PRODUCTOS (SOLO ADMIN/INV PUEDE VER LISTA COMPLETA PARA GESTIONAR) ---
+# Ajusta permisos si Bodega también necesita ver esto
+@login_required
 def modulo_productos(request):
+    # Permitir acceso a Admin e Inventario (Bodega) para ver lista
+    if not (solo_admin(request.user) or request.user.rol == 'inventario'):
+         return redirect('sin_permiso')
+
     productos = Producto.objects.all().select_related('categoria')
 
     nombre = request.GET.get('nombre', '').strip()
@@ -158,6 +175,7 @@ def modulo_productos(request):
         'nombre': nombre,
         'categoria_id': categoria_id,
         'precio_min': precio_min,
+        'es_admin': solo_admin(request.user), # Para ocultar botones de editar/eliminar en template
     }
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -165,7 +183,6 @@ def modulo_productos(request):
         return JsonResponse({'html_from_view': html})
 
     return render(request, 'productos/modulo_productos.html', context)
-
 
 
 @login_required
@@ -299,42 +316,9 @@ def buscar_movimientos(request):
             'doc': m.documento_referencia or '-',
         })
     return JsonResponse({'resultados': data})
-    form = MovimientoInventarioForm()
-
-    # --- Tarjetas de resumen ---
-    today = timezone.now().date()
-    movimientos_hoy = MovimientoInventario.objects.filter(fecha_movimiento__date=today).count()
-    stock_total = Producto.objects.aggregate(total=Sum('stock_actual'))['total'] or 0
-    productos_unicos = Producto.objects.count()
-
-    # --- Historial con paginación ---
-    historial_movimientos = MovimientoInventario.objects.select_related('producto', 'usuario').order_by('-fecha_movimiento')
-    paginator = Paginator(historial_movimientos, 10)
-    page_number = request.GET.get('page')
-
-    try:
-        movimientos_page = paginator.page(page_number)
-    except PageNotAnInteger:
-        movimientos_page = paginator.page(1)
-    except EmptyPage:
-        movimientos_page = paginator.page(paginator.num_pages)
-
-    # --- Contexto al template ---
-    context = {
-        'form': form,
-        'movimientos': movimientos_page,
-        'summary': {
-            'movimientos_hoy': movimientos_hoy,
-            'stock_total': stock_total,
-            'productos_unicos': productos_unicos,
-        },
-    }
-
-    return render(request, 'productos/inventario.html', context)
-
-
 
 @login_required
+@user_passes_test(solo_inventario, login_url='/usuarios/sin_permiso/')
 def editar_movimiento(request, id):
     movimiento = get_object_or_404(MovimientoInventario, id=id)
     form = MovimientoInventarioForm(request.POST or None, instance=movimiento)
@@ -351,6 +335,7 @@ def editar_movimiento(request, id):
 
 
 @login_required
+@user_passes_test(solo_inventario, login_url='/usuarios/sin_permiso/')
 def eliminar_movimiento(request, id):
     movimiento = get_object_or_404(MovimientoInventario, id=id)
     if request.method == 'POST':
@@ -361,6 +346,7 @@ def eliminar_movimiento(request, id):
 
 
 @login_required
+@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
 def eliminar_producto(request, product_id):
     """
     Elimina un producto específico. Requiere método POST para seguridad.
@@ -378,6 +364,7 @@ def eliminar_producto(request, product_id):
         return redirect('modulo_productos')
     
 @login_required
+@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
 def editar_producto(request, product_id):
     """
     Maneja la edición. Muestra el formulario RELLENO y guarda los cambios.
@@ -462,6 +449,7 @@ def exportar_excel_productos(request):
 
 # crud de categorias
 @login_required
+@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
 def listar_categorias(request):
     # === Guardar cantidad seleccionada en sesión ===
     if 'page_size' in request.GET:
@@ -500,7 +488,9 @@ def listar_categorias(request):
     }
 
     return render(request, 'productos/categorias/listar.html', context)
+
 @login_required
+@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
 def buscar_categorias(request):
     """Filtra categorías por nombre en tiempo real"""
     query = request.GET.get('q', '').strip()
@@ -518,6 +508,7 @@ def buscar_categorias(request):
     return JsonResponse({'html': html})
 
 @login_required
+@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
 def crear_categoria(request):
     if request.method == 'POST':
         form = CategoriaForm(request.POST)
@@ -531,6 +522,7 @@ def crear_categoria(request):
 
 
 @login_required
+@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
 def editar_categoria(request, id):
     categoria = get_object_or_404(Categoria, id=id)
     if request.method == 'POST':
@@ -544,13 +536,12 @@ def editar_categoria(request, id):
     return render(request, 'productos/categorias/form.html', {'form': form, 'accion': 'Editar'})
 
 @login_required
+@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
 def eliminar_categoria(request, id):
     categoria = get_object_or_404(Categoria, id=id)
     categoria.delete()
     messages.success(request, 'Categoría eliminada correctamente.')
     return redirect('listar_categorias')
-
-
 
 def autocomplete_sku(request):
     term = request.GET.get('term', '').strip()
@@ -565,4 +556,3 @@ def autocomplete_sku(request):
             'value': p.sku
         })
     return JsonResponse(results, safe=False)
-

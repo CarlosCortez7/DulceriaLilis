@@ -1,8 +1,10 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserChangeForm, PasswordChangeForm, UserCreationForm
 from django.contrib.auth import authenticate
+# --- IMPORTACIONES FALTANTES PARA EL BLOQUEO ---
+from django.utils import timezone
+from datetime import timedelta
 from .models import Usuario
-
 
 class CustomLoginForm(AuthenticationForm):
     username = forms.CharField(
@@ -21,34 +23,72 @@ class CustomLoginForm(AuthenticationForm):
     )
 
     def clean(self):
-        username = self.cleaned_data.get('username')
-        password = self.cleaned_data.get('password')
+        username_input = self.cleaned_data.get('username')
+        password_input = self.cleaned_data.get('password')
 
-        if username and password:
-            # Intentar autenticar primero como si fuera un correo
+        if username_input and password_input:
+            # 1. Buscar al usuario para verificar si existe y si está bloqueado
+            user_obj = None
             try:
-                user_obj = Usuario.objects.get(email__iexact=username)
-                username = user_obj.username  # reemplazamos por el username real
+                user_obj = Usuario.objects.get(email__iexact=username_input)
             except Usuario.DoesNotExist:
-                pass  # si no existe por email, intenta con username normal
+                try:
+                    user_obj = Usuario.objects.get(username__iexact=username_input)
+                except Usuario.DoesNotExist:
+                    # Si no existe, dejamos que authenticate falle después, 
+                    # pero no podemos bloquear a alguien que no existe.
+                    pass
 
-            user = authenticate(self.request, username=username, password=password)
+            # 2. VERIFICAR SI ESTÁ BLOQUEADO (Antes de validar contraseña)
+            if user_obj and user_obj.bloqueado_hasta and user_obj.bloqueado_hasta > timezone.now():
+                tiempo_restante = int((user_obj.bloqueado_hasta - timezone.now()).total_seconds() / 60) + 1
+                raise forms.ValidationError(f"Cuenta bloqueada por seguridad. Inténtalo de nuevo en {tiempo_restante} minutos.")
+
+            # 3. INTENTAR AUTENTICAR
+            # Usamos el username real del objeto si lo encontramos, si no, el input original
+            auth_username = user_obj.username if user_obj else username_input
+            user = authenticate(self.request, username=auth_username, password=password_input)
 
             if user is None:
+                # --- PASSWORD INCORRECTA: LÓGICA DE BLOQUEO ---
+                if user_obj:
+                    user_obj.intentos_fallidos += 1
+                    
+                    # Límite de 5 intentos
+                    if user_obj.intentos_fallidos >= 5:
+                        user_obj.bloqueado_hasta = timezone.now() + timedelta(minutes=3)
+                        user_obj.intentos_fallidos = 0 # Reiniciamos para el siguiente ciclo
+                        user_obj.save()
+                        raise forms.ValidationError("Has excedido los 5 intentos. Tu cuenta ha sido bloqueada por 3 minutos.")
+                    
+                    user_obj.save()
+                    restantes = 5 - user_obj.intentos_fallidos
+                    raise forms.ValidationError(f"Contraseña incorrecta. Te quedan {restantes} intentos antes del bloqueo.")
+                
                 raise forms.ValidationError("Correo o contraseña incorrectos.")
-            if not user.is_active:
-                raise forms.ValidationError("Esta cuenta está desactivada.")
+
+            else:
+                # --- LOGIN EXITOSO: RESETEAR CONTADORES ---
+                # Si el login es correcto, limpiamos cualquier intento fallido previo
+                if user_obj:
+                    user_obj.intentos_fallidos = 0
+                    user_obj.bloqueado_hasta = None
+                    user_obj.save()
+
+                if not user.is_active:
+                    raise forms.ValidationError("Esta cuenta está desactivada.")
+                
+                self.user_cache = user
         else:
             raise forms.ValidationError("Debes ingresar tus credenciales.")
 
-        self.user_cache = user
         return self.cleaned_data
 
 
-class UsuarioCreationForm(UserCreationForm):
+class UsuarioCreationForm(forms.ModelForm):
     class Meta:
         model = Usuario
-        fields = ['username', 'email', 'telefono', 'rol', 'password1', 'password2']
+        fields = ['username', 'email', 'telefono', 'rol']
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -56,13 +96,13 @@ class UsuarioCreationForm(UserCreationForm):
         self.fields['email'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Correo electrónico'})
         self.fields['telefono'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Teléfono'})
         self.fields['rol'].widget.attrs.update({'class': 'form-select'})
-        self.fields['password1'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Contraseña'})
-        self.fields['password2'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Repetir Contraseña'})
-        self.fields['rol'].choices = [choice for choice in self.fields['rol'].choices if choice[0] != 'admin' or choice[0] == 'Administrador']
+        
+        if 'rol' in self.fields:
+            self.fields['rol'].choices = [choice for choice in self.fields['rol'].choices if choice[0] != 'admin' or choice[0] == 'Administrador']
 
 
 class UsuarioChangeForm(UserChangeForm):
-    password = None  # No mostrar ni editar la contraseña aquí
+    password = None
 
     class Meta:
         model = Usuario

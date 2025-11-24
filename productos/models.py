@@ -8,11 +8,11 @@ ESTADO_CHOICES = [
 ]
 
 MEDIDA_CHOICES = [
-    ('unidad', 'Unidad'),
-    ('ml', 'ML'),
-    ('litro', 'Litro'),
-    ('kg', 'KG'),
-    ('gramo', 'Gramo'),
+    ('unidad', 'unidad'),
+    ('ml', 'ml'),
+    ('litro', 'litro'),
+    ('kg', 'kg'),
+    ('gramo', 'gramo'),
 ]
 
 class Categoria(models.Model):

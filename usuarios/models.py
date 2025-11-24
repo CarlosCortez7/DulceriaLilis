@@ -26,6 +26,11 @@ class Usuario(AbstractUser):
     observaciones = models.TextField(blank=True, null=True)
     avatar = models.ImageField(upload_to='avatars/', default='avatars/default_user.png', blank=True, null=True)
 
+    intentos_fallidos = models.IntegerField(default=0)
+    bloqueado_hasta = models.DateTimeField(null=True, blank=True)
+
+    must_change_password = models.BooleanField(default=False)
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
