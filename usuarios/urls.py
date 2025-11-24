@@ -11,6 +11,8 @@ urlpatterns = [
     # --- NUEVA RUTA DE CAMBIO DE CLAVE (Reemplaza al perfil) ---
     # Corrección: Agregado 'views.' antes del nombre de la función
     path('seguridad/cambiar-password/', views.cambiar_password_dedicado, name='cambiar_password_dedicado'),
+    path('usuarios/reset-password/<int:user_id>/', views.resetear_password_admin, name='resetear_password_admin'),
+    
 
     # --- CRUD Usuarios ---
     path('usuarios/', views.modulo_usuarios, name='modulo_usuarios'),
@@ -31,7 +33,7 @@ urlpatterns = [
         template_name="usuarios/password_reset_done.html"
     ), name="password_reset_done"),
 
-    path("reset/<uidb64>/<token>/", auth_views.PasswordResetConfirmView.as_view(
+    path("reset/<uidb64>/<token>/", views.CustomPasswordResetConfirmView.as_view(
         template_name="usuarios/password_reset_confirm.html",
         success_url="/usuarios/reset/complete/"
     ), name="password_reset_confirm"),

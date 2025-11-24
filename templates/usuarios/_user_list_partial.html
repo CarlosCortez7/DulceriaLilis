@@ -6,6 +6,7 @@
     <td>{{ usuario_item.email }}</td>
     <td>{{ usuario_item.first_name }} {{ usuario_item.last_name }}</td>
     <td>{{ usuario_item.rol|upper }}</td>
+
     <td>
         {% if usuario_item.is_active %}
             <span class="badge bg-success">ACTIVO</span>
@@ -13,24 +14,35 @@
             <span class="badge bg-warning text-dark">INACTIVO</span>
         {% endif %}
     </td>
+
     <td>{% if usuario_item.mfa_habilitado %}Sí{% else %}No{% endif %}</td>
+
     <td>{{ usuario_item.last_login|date:"Y-m-d H:i"|default:"-" }}</td>
+
     <td class="table-actions">
         <div class="d-flex gap-2">
 
-            <!-- Botón Editar -->
-            <a href="{% url 'editar_usuario' usuario_item.id %}" 
-               class="btn btn-sm btn-warning btn-editar">
+            <a href="{% url 'editar_usuario' usuario_item.id %}"
+               class="btn btn-sm btn-warning btn-editar"
+               title="Editar datos del usuario">
                 Editar
             </a>
 
-            <!-- Botón Eliminar -->
-            <form action="{% url 'eliminar_usuario' usuario_item.id %}" 
-                  method="POST" 
+            {% if request.user != usuario_item %}
+            <a href="{% url 'resetear_password_admin' usuario_item.id %}"
+               class="btn btn-sm btn-info text-white btn-resetear"
+               title="Generar nueva clave temporal y enviar por correo">
+               Resetear
+            </a>
+            {% endif %}
+
+            <form action="{% url 'eliminar_usuario' usuario_item.id %}"
+                  method="POST"
                   class="form-eliminar d-inline">
                 {% csrf_token %}
-                <button type="submit" 
+                <button type="submit"
                         class="btn btn-sm btn-danger btn-eliminar"
+                        title="Eliminar usuario"
                         {% if request.user == usuario_item %}disabled{% endif %}>
                     Eliminar
                 </button>
@@ -39,8 +51,11 @@
         </div>
     </td>
 </tr>
+
 {% empty %}
 <tr>
-    <td colspan="8" class="text-center text-muted">No se encontraron usuarios con esos criterios.</td>
+    <td colspan="8" class="text-center text-muted">
+        No se encontraron usuarios con esos criterios.
+    </td>
 </tr>
 {% endfor %}

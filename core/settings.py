@@ -148,9 +148,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración de login/logout
-LOGIN_URL = '/iniciar_sesion/'
-LOGIN_REDIRECT_URL = '/compras/'
-LOGOUT_REDIRECT_URL = '/admin/login/'
+LOGIN_URL = '/usuarios/iniciar_sesion/'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = '/usuarios/iniciar_sesion/'
 
 
 
