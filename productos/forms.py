@@ -38,7 +38,7 @@ class ProductoForm(forms.ModelForm):
         }
 
 class MovimientoInventarioForm(forms.ModelForm):
-    # Campo para buscar producto por SKU, no está en el modelo directamente
+    # Campo para buscar producto por SKU
     sku_producto = forms.CharField(
         label="Producto (SKU)",
         max_length=100,
@@ -46,21 +46,54 @@ class MovimientoInventarioForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SKU-0001'})
     )
 
+    # 🔥 Marcar campos como obligatorios
+    documento_referencia = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'OC-101 / FAC-900'})
+    )
+
+    observaciones = forms.CharField(
+        required=True,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 1,
+            'placeholder': 'Notas de operación...'
+        })
+    )
+
+    lote = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'L-2025-001'})
+    )
+
+    serie = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SN123456789'})
+    )
+
+    fecha_vencimiento = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+
     class Meta:
         model = MovimientoInventario
         fields = [
-            'sku_producto', 'tipo_movimiento', 'cantidad', 'documento_referencia', 
-            'observaciones', 'lote', 'serie', 'fecha_vencimiento'
+            'sku_producto',
+            'tipo_movimiento',
+            'cantidad',
+            'documento_referencia',
+            'observaciones',
+            'lote',
+            'serie',
+            'fecha_vencimiento'
         ]
+
         widgets = {
             'tipo_movimiento': forms.Select(attrs={'class': 'form-select'}),
             'cantidad': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '10'}),
-            'documento_referencia': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'OC-101 / FAC-900'}),
-            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 1, 'placeholder': 'Notas de operación...'}),
-            'lote': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'L-2025-001'}),
-            'serie': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SN123456789'}),
-            'fecha_vencimiento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
+
 
 class CategoriaForm(forms.ModelForm):
     class Meta:

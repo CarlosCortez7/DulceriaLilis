@@ -188,19 +188,13 @@ def modulo_productos(request):
 @login_required
 @user_passes_test(solo_inventario, login_url='/usuarios/sin_permiso/')
 def modulo_inventario(request):
-    """
-    Módulo de inventario: permite registrar movimientos (ingreso/salida/ajuste),
-    actualizar el stock del producto y mostrar el historial con resumen diario.
-    """
 
-    # === 🔹 Detectar si el usuario solo puede ver ===
     solo_lectura = request.user.rol == "finanzas"
 
-    # --- POST: Registrar movimiento ---
+    # --- POST ---
     if request.method == 'POST':
-        # ⚠️ Si está en modo solo lectura, no puede registrar
         if solo_lectura:
-            messages.warning(request, "No tienes permisos para registrar movimientos (modo solo lectura).")
+            messages.warning(request, "No tienes permisos para registrar movimientos.")
             return redirect('modulo_inventario')
 
         form = MovimientoInventarioForm(request.POST)
@@ -215,52 +209,49 @@ def modulo_inventario(request):
                 messages.error(request, f" El producto con SKU '{sku}' no existe.")
                 return redirect('modulo_inventario')
 
-            # Crear el movimiento sin guardar aún
             movimiento = form.save(commit=False)
             movimiento.producto = producto
-            movimiento.usuario = request.user if request.user.is_authenticated else None
+            movimiento.usuario = request.user
 
-            # --- Lógica de actualización de stock ---
             if tipo == 'INGRESO':
                 producto.stock_actual += cantidad
-                movimiento.save()
-                producto.save()
-                messages.success(request, f" Ingreso de {cantidad} unidades al producto '{producto.nombre}' registrado correctamente.")
-
             elif tipo == 'SALIDA':
                 if producto.stock_actual < cantidad:
-                    messages.error(request, f" Stock insuficiente para '{producto.nombre}'. Stock actual: {producto.stock_actual}.")
+                    messages.error(request, f"Stock insuficiente para '{producto.nombre}'.")
                     return redirect('modulo_inventario')
                 producto.stock_actual -= cantidad
-                movimiento.save()
-                producto.save()
-                messages.success(request, f" Salida de {cantidad} unidades del producto '{producto.nombre}' registrada correctamente.")
 
-            elif tipo == 'AJUSTE':
-                movimiento.save()
-                messages.info(request, f"ℹ Movimiento de ajuste registrado para '{producto.nombre}'.")
-
-            else:
-                messages.warning(request, " Tipo de movimiento no reconocido.")
-
+            movimiento.save()
+            producto.save()
+            messages.success(request, "Movimiento registrado correctamente.")
             return redirect('modulo_inventario')
+
         else:
-            messages.error(request, " Error al registrar el movimiento. Revisa los datos del formulario.")
+            messages.error(request, "Error al registrar movimiento.")
             return redirect('modulo_inventario')
 
-    # --- GET: Carga de página ---
+    # --- GET ---
     form = MovimientoInventarioForm()
 
-    # --- Tarjetas de resumen ---
     today = timezone.now().date()
     movimientos_hoy = MovimientoInventario.objects.filter(fecha_movimiento__date=today).count()
     stock_total = Producto.objects.aggregate(total=Sum('stock_actual'))['total'] or 0
     productos_unicos = Producto.objects.count()
 
-    # --- Historial con paginación ---
-    historial_movimientos = MovimientoInventario.objects.select_related('producto', 'usuario').order_by('-fecha_movimiento')
-    paginator = Paginator(historial_movimientos, 4)  # 4 movimientos por página
-    page_number = request.GET.get('page', 1)
+    # ========= 🔥 NUEVO: SELECTOR DE TAMAÑO DE PÁGINA =========
+    page_size = request.GET.get("page_size", request.session.get("inv_page_size", 10))
+    try:
+        page_size = int(page_size)
+    except:
+        page_size = 10
+
+    request.session["inv_page_size"] = page_size
+    # ===========================================================
+
+    historial_movimientos = MovimientoInventario.objects.select_related("producto", "usuario").order_by("-fecha_movimiento")
+
+    paginator = Paginator(historial_movimientos, page_size)
+    page_number = request.GET.get("page", 1)
 
     try:
         movimientos_page = paginator.page(page_number)
@@ -269,19 +260,21 @@ def modulo_inventario(request):
     except EmptyPage:
         movimientos_page = paginator.page(paginator.num_pages)
 
-    # --- Contexto al template ---
     context = {
-        'form': form,
-        'movimientos': movimientos_page,
-        'summary': {
-            'movimientos_hoy': movimientos_hoy,
-            'stock_total': stock_total,
-            'productos_unicos': productos_unicos,
+        "form": form,
+        "movimientos": movimientos_page,
+        "page_size": page_size,
+        "page_size_options": [4, 10, 25, 50, 100],  # 👈 opciones disponibles
+        "summary": {
+            "movimientos_hoy": movimientos_hoy,
+            "stock_total": stock_total,
+            "productos_unicos": productos_unicos,
         },
-        'solo_lectura': solo_lectura,  # 👈 importante
+        "solo_lectura": solo_lectura,
     }
 
-    return render(request, 'productos/inventario.html', context)
+    return render(request, "productos/inventario.html", context)
+
 
 def buscar_movimientos(request):
     """Devuelve resultados filtrados del historial en formato JSON (AJAX)."""
@@ -325,13 +318,26 @@ def editar_movimiento(request, id):
 
     if request.method == 'POST':
         if form.is_valid():
-            form.save()
+            movimiento = form.save(commit=False)
+            sku = form.cleaned_data.get('sku_producto')  # El SKU ingresado por el usuario
+            try:
+                producto = Producto.objects.get(sku=sku)
+                movimiento.producto = producto
+            except Producto.DoesNotExist:
+                messages.error(request, f"No existe un producto con el SKU {sku}.")
+                return render(request, 'productos/inventario_editar.html', {'form': form, 'movimiento': movimiento})
+            
+            movimiento.save()
             messages.success(request, "Movimiento actualizado correctamente.")
             return redirect('modulo_inventario')
         else:
             messages.error(request, "Error al actualizar el movimiento. Revisa los datos.")
     
+    # Prellenar el SKU actual en el campo de formulario
+    form.fields['sku_producto'].initial = movimiento.producto.sku
+
     return render(request, 'productos/inventario_editar.html', {'form': form, 'movimiento': movimiento})
+
 
 
 @login_required
@@ -555,4 +561,54 @@ def autocomplete_sku(request):
             'label': f"{p.sku} - {p.nombre}",
             'value': p.sku
         })
+<<<<<<< HEAD
     return JsonResponse(results, safe=False)
+=======
+    return JsonResponse(results, safe=False)
+
+def exportar_movimientos_excel(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Movimientos"
+
+    # Encabezados completos
+    ws.append([
+        "Fecha Movimiento",
+        "Tipo",
+        "Producto",
+        "SKU",
+        "Cantidad",
+        "Usuario",
+        "Documento Ref.",
+        "Lote",
+        "Serie",
+        "Fecha Vencimiento",
+        "Observaciones"
+    ])
+
+    movimientos = MovimientoInventario.objects.select_related("producto", "usuario").order_by("-fecha_movimiento")
+
+    for m in movimientos:
+        ws.append([
+            m.fecha_movimiento.strftime("%Y-%m-%d %H:%M") if m.fecha_movimiento else "-",
+            m.get_tipo_movimiento_display(),
+            m.producto.nombre,
+            m.producto.sku,
+            m.cantidad,
+            m.usuario.username if m.usuario else "Sistema",
+            m.documento_referencia or "-",
+            m.lote or "-",
+            m.serie or "-",
+            m.fecha_vencimiento.strftime("%Y-%m-%d") if m.fecha_vencimiento else "-",
+            m.observaciones or "-"
+        ])
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename=\"movimientos_completo.xlsx\"'
+
+    wb.save(response)
+    return response
+
+>>>>>>> origin/feature/integracion-CARLOSNICO

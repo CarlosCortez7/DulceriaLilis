@@ -4,7 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.http import require_POST
-# CAMBIO: Usamos user_passes_test en lugar de permission_required para redirigir bonito
+# Importamos user_passes_test para control de acceso personalizado
 from django.contrib.auth.decorators import login_required, user_passes_test
 import openpyxl
 import json
@@ -34,50 +34,95 @@ def solo_admin(user):
     """Permite acceso SOLO a Administradores (para borrar/exportar sensible)."""
     return user.is_authenticated and (user.rol == 'admin' or user.is_superuser)
 
-# ------------------------------
-# VISTA PROVEEDORES (LISTAR + CREAR)
-# ------------------------------
-@login_required 
-@user_passes_test(es_admin_o_compras, login_url='/usuarios/sin_permiso/') # 🔒 CANDADO
-def modulo_proveedores(request):
+# ==============================================================================
+# HELPER: Lógica común para obtener el listado con filtros y memoria
+# (Esto evita repetir código en 'modulo_proveedores' y 'editar_proveedor')
+# ==============================================================================
+def obtener_listado_proveedores(request):
     """
-    Muestra el formulario de CREACIÓN y la lista de proveedores.
+    Retorna un diccionario con page_obj, query, page_size, sort_by, direction
+    usando la lógica de Sesiones y GET.
     """
-    
-    # --- Lógica de Paginador por Sesión ---
-    if 'page_size' in request.GET:
-        page_size = request.GET.get('page_size', 10)
-        request.session['page_size'] = page_size
+    # 1. Limpieza
+    if request.GET.get('limpiar'):
+        if 'prov_search' in request.session: del request.session['prov_search']
+        if 'prov_page_size' in request.session: del request.session['prov_page_size']
+        if 'prov_page' in request.session: del request.session['prov_page']
+        return None # Señal para redirigir
+
+    # 2. Búsqueda (Search)
+    req_query = request.GET.get('q')
+    if req_query is not None:
+        query = req_query
+        request.session['prov_search'] = query
+        request.session['prov_page'] = 1 
     else:
-        page_size = request.session.get('page_size', 10)
-    
-    # --- Lógica de Búsqueda ---
-    query = request.GET.get('q', '')
-    
-    # --- Lógica de Ordenamiento ---
-    sort_by = request.GET.get('sort', 'razon_social') 
-    direction = request.GET.get('dir', 'asc') 
+        query = request.session.get('prov_search', '')
+
+    # 3. Tamaño de Página
+    req_page_size = request.GET.get('page_size')
+    if req_page_size:
+        page_size = int(req_page_size)
+        request.session['prov_page_size'] = page_size
+    else:
+        page_size = int(request.session.get('prov_page_size', 10))
+
+    # 4. Número de Página
+    req_page = request.GET.get('page')
+    if req_page:
+        page_number = req_page
+        request.session['prov_page'] = page_number
+    else:
+        page_number = request.session.get('prov_page', 1)
+
+    # 5. Ordenamiento
+    sort_by = request.GET.get('sort', 'razon_social')
+    direction = request.GET.get('dir', 'asc')
     order_prefix = '-' if direction == 'desc' else ''
     
     allowed_sort_fields = ['razon_social', 'rut_nif', 'estado']
-    if sort_by not in allowed_sort_fields:
-        sort_by = 'razon_social'
-        
+    if sort_by not in allowed_sort_fields: sort_by = 'razon_social'
+
+    # 6. QuerySet
     if query:
-        proveedores = Proveedor.objects.filter(
-            Q(rut_nif__icontains=query) | Q(razon_social__icontains=query)
+        proveedores_list = Proveedor.objects.filter(
+            Q(rut_nif__icontains=query) | 
+            Q(razon_social__icontains=query) |
+            Q(nombre_fantasia__icontains=query)
         ).order_by(f"{order_prefix}{sort_by}")
     else:
-        proveedores = Proveedor.objects.all().order_by(f"{order_prefix}{sort_by}")
+        proveedores_list = Proveedor.objects.all().order_by(f"{order_prefix}{sort_by}")
 
-    paginator = Paginator(proveedores, page_size)
-    page_number = request.GET.get('page')
+    # 7. Paginación
+    paginator = Paginator(proveedores_list, page_size)
     try:
         page_obj = paginator.page(page_number)
     except PageNotAnInteger:
         page_obj = paginator.page(1)
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
+
+    return {
+        'proveedores': page_obj, # Legacy support
+        'page_obj': page_obj,
+        'query': query,
+        'page_size': page_size,
+        'sort_by': sort_by,
+        'direction': direction
+    }
+
+
+# ------------------------------
+# VISTA PROVEEDORES (LISTAR + CREAR)
+# ------------------------------
+@login_required 
+@user_passes_test(es_admin_o_compras, login_url='/usuarios/sin_permiso/') # 🔒 CANDADO
+def modulo_proveedores(request):
+    
+    # Usamos el helper
+    context_listado = obtener_listado_proveedores(request)
+    if context_listado is None: # Si se pidió limpiar
+        return redirect('modulo_proveedores')
 
     if request.method == 'POST':
         # Validación extra: Solo admin o compras pueden guardar
@@ -88,7 +133,7 @@ def modulo_proveedores(request):
         form = ProveedorForm(request.POST)
         if form.is_valid():
             nuevo_proveedor = form.save() 
-            messages.success(request, f"Proveedor '{nuevo_proveedor.razon_social}' guardado. Ahora, asocie los productos.")
+            messages.success(request, f"Proveedor '{nuevo_proveedor.razon_social}' guardado.")
             return redirect('editar_proveedor', proveedor_id=nuevo_proveedor.id) 
         else:
             messages.error(request, "Corrige los errores en el formulario.")
@@ -98,15 +143,12 @@ def modulo_proveedores(request):
 
     context = {
         'titulo_pagina': 'Módulo de Proveedores',
-        'proveedores': page_obj, 
-        'page_obj': page_obj, 
-        'query': query,
         'form': form_para_mostrar, 
         'editando': False,
-        'page_size': int(page_size), 
-        'sort_by': sort_by,          
-        'direction': direction       
     }
+    # Fusionamos los datos del listado (page_obj, query, etc) al contexto principal
+    context.update(context_listado)
+    
     return render(request, 'proveedores/modulo_proveedores.html', context)
 
 
@@ -116,11 +158,15 @@ def modulo_proveedores(request):
 @login_required 
 @user_passes_test(es_admin_o_compras, login_url='/usuarios/sin_permiso/') # 🔒 CANDADO
 def editar_proveedor(request, proveedor_id=None, pk=None):
-    """
-    Prepara la página de edición para ACTUALIZAR un proveedor.
-    """
+    
     id_proveedor = proveedor_id or pk
     proveedor_a_editar = get_object_or_404(Proveedor, pk=id_proveedor)
+
+    # --- CARGAR EL CONTEXTO DEL LISTADO ---
+    context_listado = obtener_listado_proveedores(request)
+    if context_listado is None: 
+        return redirect('modulo_proveedores')
+    # --------------------------------------
 
     if request.method == 'POST':
         form = ProveedorForm(request.POST, instance=proveedor_a_editar)
@@ -134,7 +180,7 @@ def editar_proveedor(request, proveedor_id=None, pk=None):
     else:
         form_para_mostrar = ProveedorForm(instance=proveedor_a_editar)
 
-    # --- Lógica para cargar DATOS DE LA TAB 3 (Productos) ---
+    # Lógica Tabs Productos
     productos_asociados = proveedor_a_editar.productos_proveedor.select_related('producto').all()
     ids_productos_asociados = productos_asociados.values_list('producto__id', flat=True)
     productos_disponibles = Producto.objects.exclude(id__in=ids_productos_asociados).order_by('nombre')
@@ -155,6 +201,10 @@ def editar_proveedor(request, proveedor_id=None, pk=None):
         'pp_form_nuevo': pp_form_nuevo,
         'producto_form': producto_form
     }
+    
+    # Fusionamos el contexto del listado para que la tabla de abajo funcione
+    context.update(context_listado)
+
     return render(request, 'proveedores/modulo_proveedores.html', context)
 
 
@@ -167,8 +217,7 @@ def editar_proveedor(request, proveedor_id=None, pk=None):
 def asociar_producto_proveedor(request, proveedor_id):
     proveedor = get_object_or_404(Proveedor, id=proveedor_id)
     
-    # Para crear productos nuevos, quizás quieras que SOLO sea Admin
-    # Si compras también puede, usa 'es_admin_o_compras'
+    # Chequeo de permiso para crear productos (si aplica)
     if 'submit_nuevo' in request.POST and not es_admin_o_compras(request.user):
         messages.error(request, "No tienes permisos para crear nuevos productos.")
         return redirect('editar_proveedor', proveedor_id=proveedor_id)
@@ -181,6 +230,7 @@ def asociar_producto_proveedor(request, proveedor_id):
         producto_form = ProductoForm() 
 
         producto_id = request.POST.get('producto') 
+        
         if not producto_id:
             messages.error(request, "Error: Debe seleccionar un producto.")
             return redirect('editar_proveedor', proveedor_id=proveedor_id)
@@ -230,7 +280,6 @@ def asociar_producto_proveedor(request, proveedor_id):
 def desasociar_producto_proveedor(request, asociacion_id):
     asociacion = get_object_or_404(ProductoProveedor, id=asociacion_id)
     producto_nombre = asociacion.producto.nombre
-    
     try:
         asociacion.delete()
         return JsonResponse({'status': 'success', 'message': f"Producto '{producto_nombre}' desasociado."})
@@ -239,7 +288,7 @@ def desasociar_producto_proveedor(request, asociacion_id):
 
 
 # ------------------------------
-# ELIMINAR PROVEEDOR (Principal)
+# ELIMINAR PROVEEDOR
 # ------------------------------
 @login_required 
 @user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # 🔒 OJO: Solo ADMIN puede borrar proveedores
@@ -263,7 +312,17 @@ def eliminar_proveedor(request, proveedor_id=None, pk=None):
 @login_required
 @user_passes_test(es_admin_o_compras, login_url='/usuarios/sin_permiso/') # 🔒 CANDADO
 def exportar_excel_proveedores(request):
-    proveedores = Proveedor.objects.all().order_by('razon_social')
+    # Reutilizamos la lógica del query de sesión
+    query = request.session.get('prov_search', '')
+    if query:
+        proveedores = Proveedor.objects.filter(
+            Q(rut_nif__icontains=query) | 
+            Q(razon_social__icontains=query) |
+            Q(nombre_fantasia__icontains=query)
+        ).order_by('razon_social')
+    else:
+        proveedores = Proveedor.objects.all().order_by('razon_social')
+
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Proveedores"
@@ -312,9 +371,7 @@ def exportar_excel_proveedores(request):
     return response
 
 # ------------------------------------------------------------------
-#
 # VISTAS DE ÓRDENES DE COMPRA (Maestro-Detalle)
-#
 # ------------------------------------------------------------------
 
 @login_required
@@ -329,7 +386,7 @@ def gestion_orden_compra(request, orden_id=None):
     productos_data_json = "{}" 
 
     if orden_id:
-        # Validación manual si se requiere, pero el decorador ya cubre admin/compras
+        # Validación manual si se requiere
         orden_a_editar = get_object_or_404(OrdenCompra.objects.select_related('proveedor', 'usuario'), pk=orden_id)
         detalles_orden = orden_a_editar.detalles_orden.select_related('producto').all()
         detalle_form = DetalleOrdenCompraForm(proveedor=orden_a_editar.proveedor)
@@ -344,6 +401,10 @@ def gestion_orden_compra(request, orden_id=None):
         if orden_a_editar:
             form = OrdenCompraForm(request.POST, instance=orden_a_editar)
         else:
+            # Permiso adicional para crear si es necesario
+            if not es_admin_o_compras(request.user):
+                messages.error(request, "No tienes permisos para crear órdenes.")
+                return redirect('gestion_orden_compra')
             form = OrdenCompraForm(request.POST)
 
         if form.is_valid():
@@ -367,24 +428,20 @@ def gestion_orden_compra(request, orden_id=None):
         else:
             form_para_mostrar = OrdenCompraForm()
 
-    # --- Paginador ---
+    # Paginador Órdenes
     if 'page_size' in request.GET:
         page_size = request.GET.get('page_size', 10)
-        request.session['page_size'] = page_size
+        request.session['oc_page_size'] = page_size
     else:
-        page_size = request.session.get('page_size', 10)
+        page_size = request.session.get('oc_page_size', 10)
 
-    # --- Búsqueda ---
     query = request.GET.get('q', '')
-    
-    # --- Ordenamiento ---
     sort_by = request.GET.get('sort', 'fecha_emision')
-    direction = request.GET.get('dir', 'desc') 
+    direction = request.GET.get('dir', 'desc')
     order_prefix = '-' if direction == 'desc' else ''
     
     allowed_sort_fields = ['id', 'proveedor__razon_social', 'estado', 'total', 'fecha_emision']
-    if sort_by not in allowed_sort_fields:
-        sort_by = 'fecha_emision'
+    if sort_by not in allowed_sort_fields: sort_by = 'fecha_emision'
         
     if query:
         ordenes = OrdenCompra.objects.filter(
@@ -413,8 +470,8 @@ def gestion_orden_compra(request, orden_id=None):
         'detalle_form': detalle_form,
         'productos_data_json': productos_data_json,
         'page_size': int(page_size), 
-        'sort_by': sort_by,          
-        'direction': direction       
+        'sort_by': sort_by, 
+        'direction': direction 
     }
     return render(request, 'ordencompra/modulodeordenes.html', context)
 
@@ -490,10 +547,6 @@ def exportar_excel_ordenes(request):
     direction = request.GET.get('dir', 'desc')
     order_prefix = '-' if direction == 'desc' else ''
     
-    allowed_sort_fields = ['id', 'proveedor__razon_social', 'estado', 'total', 'fecha_emision']
-    if sort_by not in allowed_sort_fields:
-        sort_by = 'fecha_emision'
-        
     if query:
         ordenes = OrdenCompra.objects.filter(
             Q(id__icontains=query) | Q(proveedor__razon_social__icontains=query) | Q(estado__icontains=query)
@@ -505,10 +558,7 @@ def exportar_excel_ordenes(request):
     ws = wb.active
     ws.title = "Ordenes de Compra"
 
-    headers = [
-        "ID Orden", "Proveedor", "RUT Proveedor", "Fecha Emisión",
-        "Estado", "Total", "Emitida por (Usuario)"
-    ]
+    headers = ["ID Orden", "Proveedor", "RUT Proveedor", "Fecha Emisión", "Estado", "Total", "Emitida por (Usuario)"]
     
     header_font = Font(bold=True)
     for col_num, header in enumerate(headers, 1):
@@ -525,7 +575,6 @@ def exportar_excel_ordenes(request):
         
         cell_total = ws.cell(row=row_num, column=6, value=oc.total)
         cell_total.number_format = '$#,##0.00' 
-        
         ws.cell(row=row_num, column=7, value=oc.usuario.username if oc.usuario else 'N/A')
 
     response = HttpResponse(
