@@ -561,9 +561,6 @@ def autocomplete_sku(request):
             'label': f"{p.sku} - {p.nombre}",
             'value': p.sku
         })
-<<<<<<< HEAD
-    return JsonResponse(results, safe=False)
-=======
     return JsonResponse(results, safe=False)
 
 def exportar_movimientos_excel(request):
@@ -610,5 +607,3 @@ def exportar_movimientos_excel(request):
 
     wb.save(response)
     return response
-
->>>>>>> origin/feature/integracion-CARLOSNICO

@@ -2,46 +2,92 @@
 
 {% block content %}
 <style>
-    body { background-color: #f8f9fa; }
-    .main-container { padding: 2rem; max-width: 1400px; margin: auto; }
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .main-container {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: auto;
+    }
+
     .summary-card {
-        background-color: #fff; border-radius: 0.75rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        padding: 1.5rem; text-align: center; margin-bottom: 1.5rem;
+        background-color: #fff;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
     }
-    .summary-card h5 { color: #6c757d; font-size: 1rem; margin-bottom: 0.5rem; }
-    .summary-card .display-4 { font-weight: 500; }
+
+    .summary-card h5 {
+        color: #6c757d;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-card .display-4 {
+        font-weight: 500;
+    }
+
     .card {
-        background-color: #fff; border-radius: 0.75rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        padding: 1.5rem; margin-bottom: 2rem;
+        background-color: #fff;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
     }
-    .card-header { padding-bottom: 1rem; border-bottom: 1px solid #dee2e6; }
-    .nav-tabs .nav-link.active { color: #0d6efd; border-color: #0d6efd; }
-    .table-responsive { margin-top: 1.5rem; }
-    .table .badge { font-size: 0.8em; padding: 0.4em 0.7em; }
-    .badge-success { background-color: #28a745; }
-    .badge-danger { background-color: #dc3545; }
-    
+
+    .card-header {
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    .table-responsive {
+        margin-top: 1.5rem;
+    }
+
+    .table .badge {
+        font-size: 0.8em;
+        padding: 0.4em 0.7em;
+    }
+
+    .badge-success {
+        background-color: #28a745;
+    }
+
+    .badge-danger {
+        background-color: #dc3545;
+    }
+
     /* Mejoras visuales para los controles de búsqueda y filtros */
-    .form-select:focus, .form-control:focus {
+    .form-select:focus,
+    .form-control:focus {
         border-color: #0d6efd;
         box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
     }
-    
+
     #buscarMovimiento {
         border-left: none;
     }
-    
+
     .input-group-text {
         border-right: none;
     }
-    
-    #btnLimpiarBusqueda, #btnLimpiarFiltros {
+
+    #btnLimpiarBusqueda,
+    #btnLimpiarFiltros {
         transition: all 0.2s ease;
     }
-    
-    #btnLimpiarBusqueda:hover, #btnLimpiarFiltros:hover {
+
+    #btnLimpiarBusqueda:hover,
+    #btnLimpiarFiltros:hover {
         background-color: #f8f9fa;
         transform: scale(1.05);
     }
@@ -51,9 +97,24 @@
 
     <!-- === TARJETAS DE RESUMEN === -->
     <div class="row">
-        <div class="col-md-4"><div class="summary-card"><h5>Movimientos (hoy)</h5><h2 class="display-4">{{ summary.movimientos_hoy }}</h2></div></div>
-        <div class="col-md-4"><div class="summary-card"><h5>Stock Total</h5><h2 class="display-4">{{ summary.stock_total|floatformat:0 }}</h2></div></div>
-        <div class="col-md-4"><div class="summary-card"><h5>Productos Únicos</h5><h2 class="display-4">{{ summary.productos_unicos }}</h2></div></div>
+        <div class="col-md-4">
+            <div class="summary-card">
+                <h5>Movimientos (hoy)</h5>
+                <h2 class="display-4">{{ summary.movimientos_hoy }}</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card">
+                <h5>Stock Total</h5>
+                <h2 class="display-4">{{ summary.stock_total|floatformat:0 }}</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card">
+                <h5>Productos Únicos</h5>
+                <h2 class="display-4">{{ summary.productos_unicos }}</h2>
+            </div>
+        </div>
     </div>
 
     {% if not solo_lectura %}
@@ -61,43 +122,81 @@
     <div class="card">
         <h5 class="card-header mb-3">Registrar Movimiento</h5>
         <form id="formMovimiento" method="POST" action="{% url 'modulo_inventario' %}">
-            {% csrf_token %}
-            <ul class="nav nav-tabs" id="movementTab" role="tablist">
-                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#datos" type="button">1. Datos del Movimiento</button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#avanzado" type="button">2. Trazabilidad</button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#referencias" type="button">3. Documentación</button></li>
-            </ul>
+    {% csrf_token %}
+    <ul class="nav nav-tabs" id="movementTab" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#datos" type="button">
+                1. Datos del Movimiento
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#avanzado" type="button">
+                2. Trazabilidad
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#referencias" type="button">
+                3. Documentación
+            </button>
+        </li>
+    </ul>
 
-            <div class="tab-content pt-3">
-                <div class="tab-pane fade show active" id="datos">
-                    <div class="row">
-                        <div class="col-md-3"><label class="form-label">{{ form.tipo_movimiento.label }}</label>{{ form.tipo_movimiento }}</div>
-                        <div class="col-md-3"><label class="form-label">{{ form.sku_producto.label }}</label>{{ form.sku_producto }}</div>
-                        <div class="col-md-3"><label class="form-label">{{ form.cantidad.label }}</label>{{ form.cantidad }}</div>
-                    </div>
+    <div class="tab-content pt-4"> <div class="tab-pane fade show active" id="datos">
+            <div class="row g-3"> <div class="col-md-4">
+                    <label class="form-label fw-bold">{{ form.tipo_movimiento.label }}</label>
+                    {{ form.tipo_movimiento }}
                 </div>
-
-                <div class="tab-pane fade" id="avanzado">
-                    <div class="row">
-                        <div class="col-md-4"><label class="form-label">{{ form.lote.label }}</label>{{ form.lote }}</div>
-                        <div class="col-md-4"><label class="form-label">{{ form.serie.label }}</label>{{ form.serie }}</div>
-                        <div class="col-md-4"><label class="form-label">{{ form.fecha_vencimiento.label }}</label>{{ form.fecha_vencimiento }}</div>
-                    </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">{{ form.sku_producto.label }}</label>
+                    {{ form.sku_producto }}
                 </div>
-
-                <div class="tab-pane fade" id="referencias">
-                    <div class="row">
-                        <div class="col-md-6"><label class="form-label">{{ form.documento_referencia.label }}</label>{{ form.documento_referencia }}</div>
-                        <div class="col-md-6"><label class="form-label">{{ form.observaciones.label }}</label>{{ form.observaciones }}</div>
-                    </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">{{ form.cantidad.label }}</label>
+                    {{ form.cantidad }}
                 </div>
             </div>
+        </div>
 
-            <div class="d-flex justify-content-end mt-4">
-                <button type="reset" class="btn btn-secondary me-2">Limpiar</button>
-                <button type="button" id="btnGuardar" class="btn btn-primary">Guardar Movimiento</button>
+        <div class="tab-pane fade" id="avanzado">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">{{ form.lote.label }}</label>
+                    {{ form.lote }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">{{ form.serie.label }}</label>
+                    {{ form.serie }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">{{ form.fecha_vencimiento.label }}</label>
+                    {{ form.fecha_vencimiento }}
+                </div>
             </div>
-        </form>
+        </div>
+
+        <div class="tab-pane fade" id="referencias">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">{{ form.documento_referencia.label }}</label>
+                    {{ form.documento_referencia }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">{{ form.observaciones.label }}</label>
+                    {{ form.observaciones }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end mt-4 border-top pt-3">
+        <button type="reset" class="btn btn-secondary me-2">
+            <i class="bi bi-eraser"></i> Limpiar
+        </button>
+        <button type="button" id="btnGuardar" class="btn btn-primary">
+            <i class="bi bi-save"></i> Guardar Movimiento
+        </button>
+    </div>
+</form>
     </div>
     {% endif %}
 
@@ -107,8 +206,8 @@
 
         <!-- === BOTÓN EXPORTAR EXCEL === -->
         <div class="text-end mb-3 mt-2">
-            <a href="{% url 'exportar_excel' %}" class="btn btn-success">
-                 Exportar a Excel
+            <a href="{% url 'exportar_movimientos_excel' %}" class="btn btn-success">
+                Exportar a Excel
             </a>
         </div>
 
@@ -121,9 +220,9 @@
                     <label class="form-label mb-0 me-2">Mostrar:</label>
                     <select id="pageSizeSelector" class="form-select" style="width: 90px;">
                         {% for size in page_size_options %}
-                            <option value="{{ size }}" {% if size == page_size %}selected{% endif %}>
-                                {{ size }}
-                            </option>
+                        <option value="{{ size }}" {% if size == page_size %}selected{% endif %}>
+                            {{ size }}
+                        </option>
                         {% endfor %}
                     </select>
                     <span class="text-muted ms-2 small">registros por página</span>
@@ -134,10 +233,8 @@
                     <span class="input-group-text bg-white">
                         <i class="bi bi-search"></i>
                     </span>
-                    <input type="text" 
-                           id="buscarMovimiento" 
-                           class="form-control" 
-                           placeholder="Buscar por producto, SKU o usuario...">
+                    <input type="text" id="buscarMovimiento" class="form-control"
+                        placeholder="Buscar por producto, SKU o usuario...">
                     <button class="btn btn-outline-secondary" type="button" id="btnLimpiarBusqueda">
                         <i class="bi bi-x-lg"></i>
                     </button>
@@ -147,7 +244,7 @@
             <!-- Fila 2: Filtros -->
             <div class="d-flex justify-content-end align-items-center gap-2">
                 <label class="form-label mb-0 me-2">Filtrar por:</label>
-                
+
                 <!-- 🔎 FILTRO TIPO -->
                 <select id="filtroTipo" class="form-select" style="width: 180px;">
                     <option value="">Todos los tipos</option>
@@ -160,7 +257,7 @@
                 <select id="filtroUsuario" class="form-select" style="width: 180px;">
                     <option value="">Todos los usuarios</option>
                     {% for u in usuarios %}
-                        <option value="{{ u.username }}">{{ u.username }}</option>
+                    <option value="{{ u.username }}">{{ u.username }}</option>
                     {% endfor %}
                 </select>
 
@@ -190,34 +287,39 @@
                         <td>{{ m.fecha_movimiento|date:"Y-m-d H:i" }}</td>
                         <td>
                             {% if m.tipo_movimiento == 'INGRESO' %}
-                                <span class="badge badge-success">Ingreso</span>
+                            <span class="badge badge-success">Ingreso</span>
                             {% elif m.tipo_movimiento == 'SALIDA' %}
-                                <span class="badge badge-danger">Salida</span>
+                            <span class="badge badge-danger">Salida</span>
                             {% else %}
-                                <span class="badge bg-info text-dark">Ajuste</span>
+                            <span class="badge bg-info text-dark">Ajuste</span>
                             {% endif %}
                         </td>
                         <td>{{ m.producto.nombre }} ({{ m.producto.sku }})</td>
-                        <td class="text-center fw-bold {% if m.tipo_movimiento == 'INGRESO' %}text-success{% else %}text-danger{% endif %}">
+                        <td
+                            class="text-center fw-bold {% if m.tipo_movimiento == 'INGRESO' %}text-success{% else %}text-danger{% endif %}">
                             {% if m.tipo_movimiento == 'INGRESO' %}+{% else %}-{% endif %}{{ m.cantidad }}
                         </td>
                         <td>{{ m.usuario.username|default:"Sistema" }}</td>
                         <td>{{ m.documento_referencia|default:"-" }}</td>
                         <td class="text-end">
                             {% if not solo_lectura %}
-                                <button class="btn btn-sm btn-outline-primary me-1" onclick="confirmarEdicion('{{ m.id }}', '{{ m.producto.nombre }}')">
-                                    <i class="bi bi-pencil-square"></i> Editar
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminacion('{{ m.id }}', '{{ m.producto.nombre }}')">
-                                    <i class="bi bi-trash"></i> Eliminar
-                                </button>
+                            <button class="btn btn-sm btn-outline-primary me-1"
+                                onclick="confirmarEdicion('{{ m.id }}', '{{ m.producto.nombre }}')">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger"
+                                onclick="confirmarEliminacion('{{ m.id }}', '{{ m.producto.nombre }}')">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>
                             {% else %}
-                                <span class="text-muted">🔒 Solo lectura</span>
+                            <span class="text-muted">🔒 Solo lectura</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="7" class="text-center text-muted py-4">No hay movimientos registrados todavía.</td></tr>
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">No hay movimientos registrados todavía.</td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -228,68 +330,76 @@
             <ul class="pagination justify-content-center mb-0">
                 <!-- Botón Anterior -->
                 {% if movimientos.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1&page_size={{ page_size }}" title="Primera página">
-                            <i class="bi bi-chevron-double-left"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ movimientos.previous_page_number }}&page_size={{ page_size }}">Anterior</a>
-                    </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page=1&page_size={{ page_size }}" title="Primera página">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ movimientos.previous_page_number }}&page_size={{ page_size }}">Anterior</a>
+                </li>
                 {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
-                    </li>
-                    <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
+                </li>
+                <li class="page-item disabled"><span class="page-link">Anterior</span></li>
                 {% endif %}
 
                 <!-- Números de página con rango limitado -->
                 {% for num in movimientos.paginator.page_range %}
-                    {% if num == 1 or num == movimientos.paginator.num_pages %}
-                        <!-- Siempre mostrar primera y última página -->
-                        <li class="page-item {% if movimientos.number == num %}active{% endif %}">
-                            {% if movimientos.number == num %}
-                                <span class="page-link">{{ num }}</span>
-                            {% else %}
-                                <a class="page-link" href="?page={{ num }}&page_size={{ page_size }}{{ request.GET.urlencode|slice:'1:' }}">{{ num }}</a>
-                            {% endif %}
-                        </li>
-                    {% elif num >= movimientos.number|add:'-2' and num <= movimientos.number|add:'2' %}
-                        <!-- Mostrar 2 páginas antes y después de la actual -->
-                        <li class="page-item {% if movimientos.number == num %}active{% endif %}">
-                            {% if movimientos.number == num %}
-                                <span class="page-link">{{ num }}</span>
-                            {% else %}
-                                <a class="page-link" href="?page={{ num }}&page_size={{ page_size }}{{ request.GET.urlencode|slice:'1:' }}">{{ num }}</a>
-                            {% endif %}
-                        </li>
-                    {% elif num == movimientos.number|add:'-3' or num == movimientos.number|add:'3' %}
-                        <!-- Mostrar puntos suspensivos -->
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% if num == 1 or num == movimientos.paginator.num_pages %}
+                <!-- Siempre mostrar primera y última página -->
+                <li class="page-item {% if movimientos.number == num %}active{% endif %}">
+                    {% if movimientos.number == num %}
+                    <span class="page-link">{{ num }}</span>
+                    {% else %}
+                    <a class="page-link"
+                        href="?page={{ num }}&page_size={{ page_size }}{{ request.GET.urlencode|slice:'1:' }}">{{ num
+                        }}</a>
                     {% endif %}
-                {% endfor %}
+                </li>
+                {% elif num >= movimientos.number|add:'-2' and num <= movimientos.number|add:'2' %} <!-- Mostrar 2
+                    páginas antes y después de la actual -->
+                    <li class="page-item {% if movimientos.number == num %}active{% endif %}">
+                        {% if movimientos.number == num %}
+                        <span class="page-link">{{ num }}</span>
+                        {% else %}
+                        <a class="page-link"
+                            href="?page={{ num }}&page_size={{ page_size }}{{ request.GET.urlencode|slice:'1:' }}">{{
+                            num }}</a>
+                        {% endif %}
+                    </li>
+                    {% elif num == movimientos.number|add:'-3' or num == movimientos.number|add:'3' %}
+                    <!-- Mostrar puntos suspensivos -->
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    {% endfor %}
 
-                <!-- Botón Siguiente -->
-                {% if movimientos.has_next %}
+                    <!-- Botón Siguiente -->
+                    {% if movimientos.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ movimientos.next_page_number }}&page_size={{ page_size }}">Siguiente</a>
+                        <a class="page-link"
+                            href="?page={{ movimientos.next_page_number }}&page_size={{ page_size }}">Siguiente</a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ movimientos.paginator.num_pages }}&page_size={{ page_size }}" title="Última página">
+                        <a class="page-link"
+                            href="?page={{ movimientos.paginator.num_pages }}&page_size={{ page_size }}"
+                            title="Última página">
                             <i class="bi bi-chevron-double-right"></i>
                         </a>
                     </li>
-                {% else %}
+                    {% else %}
                     <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
                     <li class="page-item disabled">
                         <span class="page-link"><i class="bi bi-chevron-double-right"></i></span>
                     </li>
-                {% endif %}
+                    {% endif %}
             </ul>
-            
+
             <!-- Información de página actual -->
             <div class="text-center mt-2 text-muted small">
-                Página {{ movimientos.number }} de {{ movimientos.paginator.num_pages }} 
+                Página {{ movimientos.number }} de {{ movimientos.paginator.num_pages }}
                 ({{ movimientos.paginator.count }} registros totales)
             </div>
         </nav>
@@ -304,169 +414,169 @@
 
 {% if solo_lectura %}
 <script>
-Swal.fire({
-    title: "Modo solo lectura",
-    text: "Tu rol es Finanzas, por lo que no puedes registrar ni modificar movimientos.",
-    icon: "info",
-    confirmButtonText: "Entendido",
-    confirmButtonColor: "#0d6efd"
-});
+    Swal.fire({
+        title: "Modo solo lectura",
+        text: "Tu rol es Finanzas, por lo que no puedes registrar ni modificar movimientos.",
+        icon: "info",
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#0d6efd"
+    });
 </script>
 {% endif %}
 
 <script>
-$(window).on('load', function() {
-    // === AUTOCOMPLETADO SKU ===
-    const skuField = $('#id_sku_producto');
-    if (skuField.length) {
-        skuField.autocomplete({
-            source: "{% url 'autocomplete_sku' %}",
-            minLength: 1,
-            delay: 200,
-            select: function(event, ui) {
-                skuField.val(ui.item.value);
-                return false;
-            }
-        });
-    }
-
-    // === LIMPIAR BÚSQUEDA ===
-    $('#btnLimpiarBusqueda').on('click', function() {
-        $('#buscarMovimiento').val('');
-        $('#buscarMovimiento').trigger('input');
-    });
-
-    // === LIMPIAR FILTROS ===
-    $('#btnLimpiarFiltros').on('click', function() {
-        $('#filtroTipo').val('');
-        $('#filtroUsuario').val('');
-        $('#buscarMovimiento').val('');
-        $('#buscarMovimiento').trigger('input');
-    });
-
-    // === CAMBIO DE PAGE SIZE PRESERVANDO FILTROS ===
-    $('#pageSizeSelector').on('change', function() {
-        const pageSize = $(this).val();
-        const urlParams = new URLSearchParams(window.location.search);
-        
-        // Actualizar page_size
-        urlParams.set('page_size', pageSize);
-        
-        // Resetear a página 1 cuando se cambia el tamaño
-        urlParams.set('page', '1');
-        
-        // Redirigir con todos los parámetros
-        window.location.href = '?' + urlParams.toString();
-    });
-
-    // === CONFIRMAR GUARDADO ===
-    $('#btnGuardar').on('click', function (e) {
-        e.preventDefault();
-
-        const requiredIds = [
-            "id_tipo_movimiento",
-            "id_sku_producto",
-            "id_cantidad",
-            "id_lote",
-            "id_serie",
-            "id_fecha_vencimiento",
-            "id_documento_referencia",
-            "id_observaciones"
-        ];
-
-        let faltantes = [];
-
-        requiredIds.forEach(id => {
-            let campo = document.getElementById(id);
-            if (campo && !campo.value.trim()) {
-                faltantes.push(id.replace("id_", "").replace("_", " "));
-                campo.classList.add("is-invalid");
-            } else if (campo) {
-                campo.classList.remove("is-invalid");
-            }
-        });
-
-        if (faltantes.length > 0) {
-            Swal.fire({
-                title: "Campos incompletos",
-                html: "Debes completar:<br><b>" + faltantes.join("<br>") + "</b>",
-                icon: "warning",
-                confirmButtonText: "Entendido"
+    $(window).on('load', function () {
+        // === AUTOCOMPLETADO SKU ===
+        const skuField = $('#id_sku_producto');
+        if (skuField.length) {
+            skuField.autocomplete({
+                source: "{% url 'autocomplete_sku' %}",
+                minLength: 1,
+                delay: 200,
+                select: function (event, ui) {
+                    skuField.val(ui.item.value);
+                    return false;
+                }
             });
-            return;
         }
 
-        Swal.fire({
-            title: '¿Registrar movimiento?',
-            text: 'Todos los campos están completos.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, guardar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#0d6efd'
-        }).then(result => {
-            if (result.isConfirmed) $('#formMovimiento').submit();
+        // === LIMPIAR BÚSQUEDA ===
+        $('#btnLimpiarBusqueda').on('click', function () {
+            $('#buscarMovimiento').val('');
+            $('#buscarMovimiento').trigger('input');
         });
-    });
 
-
-    // === SWEETALERT: Confirmar Eliminación ===
-    window.confirmarEliminacion = function(id, nombre) {
-        Swal.fire({
-            title: '¿Eliminar movimiento?',
-            text: `Se eliminará el movimiento de "${nombre}".`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#d33'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = `{% url 'eliminar_movimiento' 0 %}`.replace('0', id);
-            }
+        // === LIMPIAR FILTROS ===
+        $('#btnLimpiarFiltros').on('click', function () {
+            $('#filtroTipo').val('');
+            $('#filtroUsuario').val('');
+            $('#buscarMovimiento').val('');
+            $('#buscarMovimiento').trigger('input');
         });
-    }
 
-    // === SWEETALERT: Confirmar Edición ===
-    window.confirmarEdicion = function(id, nombre) {
-        Swal.fire({
-            title: '¿Editar movimiento?',
-            text: `¿Deseas editar el movimiento de "${nombre}"?`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, editar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#0d6efd'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = `{% url 'editar_movimiento' 0 %}`.replace('0', id);
-            }
+        // === CAMBIO DE PAGE SIZE PRESERVANDO FILTROS ===
+        $('#pageSizeSelector').on('change', function () {
+            const pageSize = $(this).val();
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // Actualizar page_size
+            urlParams.set('page_size', pageSize);
+
+            // Resetear a página 1 cuando se cambia el tamaño
+            urlParams.set('page', '1');
+
+            // Redirigir con todos los parámetros
+            window.location.href = '?' + urlParams.toString();
         });
-    }
 
-    // === BUSCADOR EN TIEMPO REAL ===
-    $('#buscarMovimiento, #filtroTipo, #filtroUsuario').on('input change', function() {
-        const q = $('#buscarMovimiento').val();
-        const tipo = $('#filtroTipo').val();
-        const usuario = $('#filtroUsuario').val();
+        // === CONFIRMAR GUARDADO ===
+        $('#btnGuardar').on('click', function (e) {
+            e.preventDefault();
 
-        $.ajax({
-            url: "{% url 'buscar_movimientos' %}",
-            data: { q: q, tipo: tipo, usuario: usuario },
-            success: function(response) {
-                const tbody = $('table tbody');
-                tbody.empty();
+            const requiredIds = [
+                "id_tipo_movimiento",
+                "id_sku_producto",
+                "id_cantidad",
+                "id_lote",
+                "id_serie",
+                "id_fecha_vencimiento",
+                "id_documento_referencia",
+                "id_observaciones"
+            ];
 
-                if (response.resultados.length === 0) {
-                    tbody.append('<tr><td colspan="7" class="text-center text-muted py-4">No se encontraron resultados.</td></tr>');
-                    return;
+            let faltantes = [];
+
+            requiredIds.forEach(id => {
+                let campo = document.getElementById(id);
+                if (campo && !campo.value.trim()) {
+                    faltantes.push(id.replace("id_", "").replace("_", " "));
+                    campo.classList.add("is-invalid");
+                } else if (campo) {
+                    campo.classList.remove("is-invalid");
                 }
+            });
 
-                response.resultados.forEach(m => {
-                    const color = m.tipo === 'INGRESO' ? 'text-success' : (m.tipo === 'SALIDA' ? 'text-danger' : 'text-info');
-                    const badge = m.tipo === 'INGRESO' ? 'badge-success' : (m.tipo === 'SALIDA' ? 'badge-danger' : 'bg-info text-dark');
+            if (faltantes.length > 0) {
+                Swal.fire({
+                    title: "Campos incompletos",
+                    html: "Debes completar:<br><b>" + faltantes.join("<br>") + "</b>",
+                    icon: "warning",
+                    confirmButtonText: "Entendido"
+                });
+                return;
+            }
 
-                    tbody.append(`
+            Swal.fire({
+                title: '¿Registrar movimiento?',
+                text: 'Todos los campos están completos.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#0d6efd'
+            }).then(result => {
+                if (result.isConfirmed) $('#formMovimiento').submit();
+            });
+        });
+
+
+        // === SWEETALERT: Confirmar Eliminación ===
+        window.confirmarEliminacion = function (id, nombre) {
+            Swal.fire({
+                title: '¿Eliminar movimiento?',
+                text: `Se eliminará el movimiento de "${nombre}".`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#d33'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `{% url 'eliminar_movimiento' 0 %}`.replace('0', id);
+                }
+            });
+        }
+
+        // === SWEETALERT: Confirmar Edición ===
+        window.confirmarEdicion = function (id, nombre) {
+            Swal.fire({
+                title: '¿Editar movimiento?',
+                text: `¿Deseas editar el movimiento de "${nombre}"?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, editar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#0d6efd'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `{% url 'editar_movimiento' 0 %}`.replace('0', id);
+                }
+            });
+        }
+
+        // === BUSCADOR EN TIEMPO REAL ===
+        $('#buscarMovimiento, #filtroTipo, #filtroUsuario').on('input change', function () {
+            const q = $('#buscarMovimiento').val();
+            const tipo = $('#filtroTipo').val();
+            const usuario = $('#filtroUsuario').val();
+
+            $.ajax({
+                url: "{% url 'buscar_movimientos' %}",
+                data: { q: q, tipo: tipo, usuario: usuario },
+                success: function (response) {
+                    const tbody = $('table tbody');
+                    tbody.empty();
+
+                    if (response.resultados.length === 0) {
+                        tbody.append('<tr><td colspan="7" class="text-center text-muted py-4">No se encontraron resultados.</td></tr>');
+                        return;
+                    }
+
+                    response.resultados.forEach(m => {
+                        const color = m.tipo === 'INGRESO' ? 'text-success' : (m.tipo === 'SALIDA' ? 'text-danger' : 'text-info');
+                        const badge = m.tipo === 'INGRESO' ? 'badge-success' : (m.tipo === 'SALIDA' ? 'badge-danger' : 'bg-info text-dark');
+
+                        tbody.append(`
                         <tr>
                             <td>${m.fecha}</td>
                             <td><span class="badge ${badge}">${m.tipo}</span></td>
@@ -488,79 +598,79 @@ $(window).on('load', function() {
                             </td>
                         </tr>
                     `);
-                });
-            },
-            error: function() {
-                Swal.fire('Error', 'No se pudo realizar la búsqueda.', 'error');
-            }
-        });
-    });
-
-    // === MENSAJES DJANGO ===
-    {% if messages %}
-        {% for message in messages %}
-            Swal.fire({
-                icon: "{% if 'error' in message.tags %}error{% elif 'success' in message.tags %}success{% else %}info{% endif %}",
-                title: "{% if 'error' in message.tags %}Error{% elif 'success' in message.tags %}Éxito{% else %}Aviso{% endif %}",
-                text: "{{ message|escapejs }}",
-                showConfirmButton: false,
-                timer: 2500,
-                timerProgressBar: true
+                    });
+                },
+                error: function () {
+                    Swal.fire('Error', 'No se pudo realizar la búsqueda.', 'error');
+                }
             });
+        });
+
+        // === MENSAJES DJANGO ===
+        {% if messages %}
+        {% for message in messages %}
+        Swal.fire({
+            icon: "{% if 'error' in message.tags %}error{% elif 'success' in message.tags %}success{% else %}info{% endif %}",
+            title: "{% if 'error' in message.tags %}Error{% elif 'success' in message.tags %}Éxito{% else %}Aviso{% endif %}",
+            text: "{{ message|escapejs }}",
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true
+        });
         {% endfor %}
-    {% endif %}
-});
+        {% endif %}
+    });
 </script>
 
 <!-- ===================================================== -->
 <!-- 🔄 SISTEMA DE CONTINUIDAD DEL FORMULARIO              -->
 <!-- ===================================================== -->
 <script>
-// === Guardar tab activa ===
-document.querySelectorAll('#movementTab .nav-link').forEach(tab => {
-    tab.addEventListener('click', () => {
-        localStorage.setItem("inv_tab_activa", tab.dataset.bsTarget);
+    // === Guardar tab activa ===
+    document.querySelectorAll('#movementTab .nav-link').forEach(tab => {
+        tab.addEventListener('click', () => {
+            localStorage.setItem("inv_tab_activa", tab.dataset.bsTarget);
+        });
     });
-});
 
-// Restaurar tab activa
-document.addEventListener("DOMContentLoaded", () => {
-    const lastTab = localStorage.getItem("inv_tab_activa");
-    if (lastTab) {
-        const tabBtn = document.querySelector(`[data-bs-target="${lastTab}"]`);
-        if (tabBtn) new bootstrap.Tab(tabBtn).show();
-    }
-});
-
-// Campos del formulario que mantendrán su valor
-const campos = [
-    "id_tipo_movimiento",
-    "id_sku_producto",
-    "id_cantidad",
-    "id_lote",
-    "id_serie",
-    "id_fecha_vencimiento",
-    "id_documento_referencia",
-    "id_observaciones"
-];
-
-campos.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    const saved = localStorage.getItem("inv_" + id);
-    if (saved !== null) el.value = saved;
-
-    el.addEventListener("input", () => {
-        localStorage.setItem("inv_" + id, el.value);
+    // Restaurar tab activa
+    document.addEventListener("DOMContentLoaded", () => {
+        const lastTab = localStorage.getItem("inv_tab_activa");
+        if (lastTab) {
+            const tabBtn = document.querySelector(`[data-bs-target="${lastTab}"]`);
+            if (tabBtn) new bootstrap.Tab(tabBtn).show();
+        }
     });
-});
 
-// Limpiar continuidad
-document.querySelector('button[type="reset"]').addEventListener("click", () => {
-    campos.forEach(id => localStorage.removeItem("inv_" + id));
-    localStorage.removeItem("inv_tab_activa");
-});
+    // Campos del formulario que mantendrán su valor
+    const campos = [
+        "id_tipo_movimiento",
+        "id_sku_producto",
+        "id_cantidad",
+        "id_lote",
+        "id_serie",
+        "id_fecha_vencimiento",
+        "id_documento_referencia",
+        "id_observaciones"
+    ];
+
+    campos.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        const saved = localStorage.getItem("inv_" + id);
+        if (saved !== null) el.value = saved;
+
+        el.addEventListener("input", () => {
+            localStorage.setItem("inv_" + id, el.value);
+        });
+    });
+
+    // Limpiar continuidad
+    document.querySelector('button[type="reset"]').addEventListener("click", () => {
+        campos.forEach(id => localStorage.removeItem("inv_" + id));
+        localStorage.removeItem("inv_tab_activa");
+    });
 </script>
 
 {% endblock %}
