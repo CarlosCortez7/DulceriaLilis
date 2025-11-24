@@ -6,7 +6,7 @@
     <title>Iniciar Sesión - Dulcería Lilis</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
     <style>
-        /* Estilos del nuevo diseño */
+        /* Estilos generales */
         * {
             margin: 0;
             padding: 0;
@@ -20,169 +20,161 @@
             justify-content: center;
             padding: 20px;
             min-height: 100vh;
-            /* --- ✨ AQUÍ ESTÁ EL CAMBIO DE COLOR --- */
-            background: linear-gradient(135deg, #fee2e2 0%, #dc2626 100%);
+            background-color: #f84f4f; /* Tu color de fondo */
         }
 
-        .login-container {
+        .main-wrapper {
             width: 100%;
-            max-width: 480px;
+            max-width: 500px; /* Un pelín más ancho para que quepan bien los textos */
         }
 
+        /* --- TARJETA DE LOGIN --- */
         .login-card {
-            background: white;
+            background: rgb(250, 202, 202);
             border-radius: 16px;
             padding: 40px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            margin-bottom: 20px; 
         }
 
-        .logo {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 24px;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-            border-radius: 50%;
+        /* --- TARJETA DESLIZABLE (ACORDEÓN) --- */
+        .info-card-collapsible {
+            background: rgb(250, 202, 202);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        /* Botón activador */
+        .credentials-toggle-btn {
+            width: 100%;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            border-bottom: 2px dashed #f7aaaf;
+            text-align: center;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+            gap: 10px;
+            transition: background-color 0.3s;
         }
 
-        .logo-text {
-            font-size: 36px;
-            font-weight: bold;
-            color: #fbbf24;
-            font-style: italic;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        .credentials-toggle-btn:hover {
+            background-color: #fff1f2;
         }
 
-        .login-card h1 {
-            color: #1e293b;
-            font-size: 24px;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
-            color: #64748b;
+        .btn-text {
+            color: #b33232;
             font-size: 14px;
-            text-align: center;
-            margin-bottom: 32px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .form-group {
-            margin-bottom: 20px;
+        /* Flecha animada */
+        .arrow-icon {
+            width: 12px;
+            height: 12px;
+            fill: #b33232;
+            transition: transform 0.4s ease;
         }
 
-        .form-group label {
-            display: block;
-            color: #475569;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 8px;
+        .credentials-toggle-btn.active .arrow-icon {
+            transform: rotate(180deg);
         }
 
-        #loginForm .form-group input {
-            width: 100% !important;
-            padding: 12px 16px !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 8px !important;
-            font-size: 15px !important;
-            transition: all 0.3s !important;
-            background: #f8fafc !important;
-            box-shadow: none !important;
+        /* Contenedor del contenido oculto */
+        .credentials-content-wrapper {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
+            opacity: 0;
         }
 
-        #loginForm .form-group input:focus {
-            outline: none !important;
-            border-color: #3b82f6 !important;
-            background: white !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+        .credentials-content-wrapper.open {
+            opacity: 1;
+            /* La altura se calcula con JS */
+        }
+        
+        .user-list-container {
+            padding: 20px;
         }
 
-        .checkbox-group {
+        /* --- ESTILOS DE LA LISTA DE USUARIOS --- */
+        .user-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .user-row {
+            display: flex;
+            justify-content: space-between; /* Separa usuario a la izq y pass a la der */
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #fff1f2;
+            border-radius: 8px;
+            border: 1px solid #ffe4e6;
+            font-size: 13px;
+        }
+
+        /* Grupos de datos (Usuario... / Pass...) */
+        .data-group {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
+            gap: 6px;
         }
 
-        .checkbox-label {
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-            color: #475569;
-            cursor: pointer;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            margin-right: 8px;
-            cursor: pointer;
-        }
-
-        .forgot-link {
-            color: #3b82f6;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .forgot-link:hover {
-            color: #2563eb;
-        }
-
-        .btn-primary {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
+        /* Etiquetas "Usuario:" y "Contraseña:" */
+        .label-muted {
+            color: #000000;
+            font-size: 11px;
+            text-transform: uppercase;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
-        }
-
-        .links {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        .links a {
-            color: #3b82f6;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .alert {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            list-style: none;
-        }
-
-        .alert-error {
-            background: #fee2e2;
+        /* El nombre del usuario (admin, ventas...) */
+        .role-badge {
+            font-weight: 700;
             color: #991b1b;
-            border: 1px solid #fca5a5;
+            font-size: 14px;
         }
+
+        /* La contraseña (estilo código) */
+        .pass-text {
+            font-family: 'Courier New', monospace;
+            color: #334155;
+            font-weight: 600;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+        }
+        /* ------------------------------------------------ */
+
+        /* Resto de estilos del login */
+        .logo { width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
+        .logo-text { font-size: 28px; font-weight: bold; color: #fbbf24; font-style: italic; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); }
+        .login-card h1 { color: #1e293b; font-size: 22px; font-weight: 600; text-align: center; margin-bottom: 5px; }
+        .subtitle { color: #64748b; font-size: 13px; text-align: center; margin-bottom: 25px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; color: #475569; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+        #loginForm .form-group input { width: 100% !important; padding: 10px 14px !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; font-size: 14px !important; transition: all 0.3s !important; background: #f8fafc !important; box-shadow: none !important; }
+        #loginForm .form-group input:focus { outline: none !important; border-color: #3b82f6 !important; background: white !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important; }
+        .checkbox-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .checkbox-label { display: flex; align-items: center; font-size: 13px; color: #475569; cursor: pointer; }
+        .checkbox-group input[type="checkbox"] { margin-right: 8px; cursor: pointer; }
+        .forgot-link { color: #3b82f6; text-decoration: none; font-size: 13px; font-weight: 500; transition: color 0.3s; }
+        .btn-primary { width: 100%; padding: 12px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
-    <div class="login-container">
+    <div class="main-wrapper">
+        
         <div id="loginScreen" class="login-card">
             <div class="logo">
                 <span class="logo-text">Lilis</span>
@@ -194,7 +186,7 @@
                 {% if form.non_field_errors %}
                     <div class="alert alert-error">
                         {% for error in form.non_field_errors %}
-                            <p>{{ error }}</p>
+                            <p style="margin:0;">{{ error }}</p>
                         {% endfor %}
                     </div>
                 {% endif %}
@@ -206,7 +198,7 @@
                     <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
                     {{ form.username }}
                     {% if form.username.errors %}
-                        <div class="alert alert-error" style="margin-top: 10px; padding: 8px;">
+                        <div class="alert alert-error" style="margin-top: 5px;">
                             {{ form.username.errors }}
                         </div>
                     {% endif %}
@@ -216,7 +208,7 @@
                     <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
                     {{ form.password }}
                      {% if form.password.errors %}
-                        <div class="alert alert-error" style="margin-top: 10px; padding: 8px;">
+                        <div class="alert alert-error" style="margin-top: 5px;">
                             {{ form.password.errors }}
                         </div>
                     {% endif %}
@@ -228,16 +220,110 @@
                         Recordarme
                     </label>
                     <a href="{% url 'recuperar_contrasena' %}" class="forgot-link">¿Olvidaste tu contraseña?</a>
-
-
                 </div>
                 <button type="submit" class="btn-primary">Iniciar sesión</button>
             </form>
+        </div>
 
-            <div class="links">
-                ¿No tienes cuenta? <a href="{% url 'registrarse' %}">Registrarme</a>
+        <div class="info-card-collapsible">
+            <button type="button" class="credentials-toggle-btn" id="toggleCredsBtn">
+                <span class="btn-text">Ver Credenciales de Prueba</span>
+                <svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 16L6 10H18L12 16Z"/></svg>
+            </button>
+            
+            <div class="credentials-content-wrapper" id="credsContent">
+                <div class="user-list-container">
+                    <div class="user-list">
+                        
+                        <div class="user-row">
+                            <div class="data-group">
+                                <span class="label-muted">Usuario:</span>
+                                <span class="role-badge">admin</span>
+                            </div>
+                            <div class="data-group">
+                                <span class="label-muted">Contraseña:</span>
+                                <span class="pass-text">Admin2025@</span>
+                            </div>
+                        </div>
+
+                        <div class="user-row">
+                            <div class="data-group">
+                                <span class="label-muted">Usuario:</span>
+                                <span class="role-badge">compras</span>
+                            </div>
+                            <div class="data-group">
+                                <span class="label-muted">Contraseña:</span>
+                                <span class="pass-text">Compras2025@</span>
+                            </div>
+                        </div>
+
+                        <div class="user-row">
+                            <div class="data-group">
+                                <span class="label-muted">Usuario:</span>
+                                <span class="role-badge">inventario</span>
+                            </div>
+                            <div class="data-group">
+                                <span class="label-muted">Contraseña:</span>
+                                <span class="pass-text">Inventario2025@</span>
+                            </div>
+                        </div>
+
+                        <div class="user-row">
+                            <div class="data-group">
+                                <span class="label-muted">Usuario:</span>
+                                <span class="role-badge">produccion</span>
+                            </div>
+                            <div class="data-group">
+                                <span class="label-muted">Contraseña:</span>
+                                <span class="pass-text">Produccion2025@</span>
+                            </div>
+                        </div>
+
+                        <div class="user-row">
+                            <div class="data-group">
+                                <span class="label-muted">Usuario:</span>
+                                <span class="role-badge">ventas</span>
+                            </div>
+                            <div class="data-group">
+                                <span class="label-muted">Contraseña:</span>
+                                <span class="pass-text">Ventas2025@</span>
+                            </div>
+                        </div>
+
+                        <div class="user-row">
+                            <div class="data-group">
+                                <span class="label-muted">Usuario:</span>
+                                <span class="role-badge">financiero</span>
+                            </div>
+                            <div class="data-group">
+                                <span class="label-muted">Contraseña:</span>
+                                <span class="pass-text">Financiero2025@</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </div>
         </div>
+
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('toggleCredsBtn');
+            const contentWrapper = document.getElementById('credsContent');
+
+            toggleBtn.addEventListener('click', function() {
+                this.classList.toggle('active');
+                if (contentWrapper.classList.contains('open')) {
+                    contentWrapper.style.maxHeight = null;
+                    contentWrapper.classList.remove('open');
+                } else {
+                    contentWrapper.classList.add('open');
+                    contentWrapper.style.maxHeight = contentWrapper.scrollHeight + "px";
+                }
+            });
+        });
+    </script>
 </body>
 </html>

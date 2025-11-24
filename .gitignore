@@ -31,6 +31,7 @@ desktop.ini
 
 # --- IDE / Editor Configuration ---
 .vscode/
+!.vscode/settings.json
 .idea/
 *.sublime-project
 *.sublime-workspace

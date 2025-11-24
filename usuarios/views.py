@@ -51,6 +51,8 @@ def home(request):
     return render(request, 'home.html')
 
 # --- REGISTRO (Solo Admin) ---
+@login_required
+@user_passes_test(solo_admin, login_url='sin_permiso')
 def registrarse(request):
     if request.method == 'GET':
         form = UsuarioCreationForm()
@@ -141,7 +143,27 @@ def iniciar_sesion(request):
             login(request, user)
             request.session.cycle_key()
             messages.success(request, f'Bienvenido de nuevo, {user.username}.')
-            return redirect('home')
+            
+            # 1. ADMINISTRADOR -> Módulo de Usuarios
+            if user.rol == 'admin':
+                return redirect('modulo_usuarios')
+
+            # 2. OP. DE COMPRAS -> Módulo de Proveedores
+            elif user.rol == 'compras':  
+                return redirect('modulo_proveedores') 
+
+            # 3. OP. INVENTARIO / PRODUCCIÓN / FINANZAS -> Módulo de Inventario
+            elif user.rol in ['inventario', 'produccion', 'finanzas']:
+                return redirect('modulo_inventario')
+
+            # 4. OP. DE VENTAS -> Módulo de Productos
+            elif user.rol in ['ventas', 'vendedor']: 
+                return redirect('modulo_productos')
+
+            # FALLBACK (Por si el rol no coincide o es superusuario sin rol)
+            else:
+                return redirect('home')
+
         else:
             messages.error(request, "Correo o contraseña incorrectos.")
             return render(request, 'usuarios/iniciar_sesion.html', {'form': form})

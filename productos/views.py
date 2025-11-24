@@ -137,9 +137,8 @@ def cart_detail(request):
 # --- GESTIÓN DE PRODUCTOS ---
 @login_required
 def modulo_productos(request):
-    # Permitir acceso a Admin e Inventario (Bodega) para ver lista
-    if not (solo_admin(request.user) or request.user.rol == 'inventario'):
-         return redirect('sin_permiso') # <--- REDIRECT MANUAL
+    if not (solo_admin(request.user) or request.user.rol == 'ventas'):
+         return redirect('sin_permiso')
 
     productos = Producto.objects.all().select_related('categoria')
 
