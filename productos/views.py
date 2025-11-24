@@ -73,7 +73,7 @@ def home(request):
     return render(request, 'productos/home.html', context)
 
 @login_required
-@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
+@user_passes_test(solo_admin, login_url='sin_permiso') # <--- REDIRECT A SIN PERMISO
 def agregar_producto(request):
     if request.method == 'POST':
         form = ProductoForm(request.POST, request.FILES or None)
@@ -134,13 +134,12 @@ def cart_detail(request):
 
     return render(request, 'productos/cart_detail.html', {'cart_items': cart_items, 'total_general': total_general})
 
-# --- GESTIÓN DE PRODUCTOS (SOLO ADMIN/INV PUEDE VER LISTA COMPLETA PARA GESTIONAR) ---
-# Ajusta permisos si Bodega también necesita ver esto
+# --- GESTIÓN DE PRODUCTOS ---
 @login_required
 def modulo_productos(request):
     # Permitir acceso a Admin e Inventario (Bodega) para ver lista
     if not (solo_admin(request.user) or request.user.rol == 'inventario'):
-         return redirect('sin_permiso')
+         return redirect('sin_permiso') # <--- REDIRECT MANUAL
 
     productos = Producto.objects.all().select_related('categoria')
 
@@ -186,7 +185,7 @@ def modulo_productos(request):
 
 
 @login_required
-@user_passes_test(solo_inventario, login_url='/usuarios/sin_permiso/')
+@user_passes_test(solo_inventario, login_url='sin_permiso') # <--- AQUÍ SE BLOQUEA EL ACCESO URL
 def modulo_inventario(request):
 
     solo_lectura = request.user.rol == "finanzas"
@@ -264,7 +263,7 @@ def modulo_inventario(request):
         "form": form,
         "movimientos": movimientos_page,
         "page_size": page_size,
-        "page_size_options": [4, 10, 25, 50, 100],  # 👈 opciones disponibles
+        "page_size_options": [4, 10, 25, 50, 100], 
         "summary": {
             "movimientos_hoy": movimientos_hoy,
             "stock_total": stock_total,
@@ -311,7 +310,7 @@ def buscar_movimientos(request):
     return JsonResponse({'resultados': data})
 
 @login_required
-@user_passes_test(solo_inventario, login_url='/usuarios/sin_permiso/')
+@user_passes_test(solo_inventario, login_url='sin_permiso') # <--- PROTECCIÓN
 def editar_movimiento(request, id):
     movimiento = get_object_or_404(MovimientoInventario, id=id)
     form = MovimientoInventarioForm(request.POST or None, instance=movimiento)
@@ -341,7 +340,7 @@ def editar_movimiento(request, id):
 
 
 @login_required
-@user_passes_test(solo_inventario, login_url='/usuarios/sin_permiso/')
+@user_passes_test(solo_inventario, login_url='sin_permiso') # <--- PROTECCIÓN
 def eliminar_movimiento(request, id):
     movimiento = get_object_or_404(MovimientoInventario, id=id)
     if request.method == 'POST':
@@ -352,30 +351,21 @@ def eliminar_movimiento(request, id):
 
 
 @login_required
-@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
+@user_passes_test(solo_admin, login_url='sin_permiso') # <--- PROTECCIÓN ADMIN
 def eliminar_producto(request, product_id):
-    """
-    Elimina un producto específico. Requiere método POST para seguridad.
-    """
     producto = get_object_or_404(Producto, id=product_id)
     if request.method == 'POST':
         nombre_producto = producto.nombre # Guardar nombre para el mensaje
         producto.delete()
         messages.success(request, f'Producto "{nombre_producto}" eliminado correctamente.')
-        # Redirigir a la lista de productos después de eliminar
         return redirect('modulo_productos')
     else:
-        # Si es GET, no hacer nada y redirigir (más seguro)
         messages.warning(request, "La acción de eliminar debe hacerse mediante POST.")
         return redirect('modulo_productos')
     
 @login_required
-@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
+@user_passes_test(solo_admin, login_url='sin_permiso') # <--- PROTECCIÓN ADMIN
 def editar_producto(request, product_id):
-    """
-    Maneja la edición. Muestra el formulario RELLENO y guarda los cambios.
-    Renderiza la MISMA plantilla que modulo_productos.
-    """
     producto = get_object_or_404(Producto, id=product_id)
     form = ProductoForm(request.POST or None, request.FILES or None, instance=producto)
 
@@ -386,30 +376,22 @@ def editar_producto(request, product_id):
             return redirect('modulo_productos')
         else:
             messages.error(request, 'Error al actualizar el producto. Revisa el formulario.')
-            # Si hay error, volvemos a mostrar el form con los errores
 
-    # Si es GET (o si el POST falló), mostramos el formulario relleno
     categorias = Categoria.objects.all()
-    # Necesitamos pasar la lista completa de productos para la tabla
     todos_los_productos = Producto.objects.all().select_related('categoria').order_by('nombre')
 
     context = {
-        'form': form, # El formulario (relleno o con errores)
-        'producto': producto, # El producto que se está editando (útil para el título, etc.)
+        'form': form,
+        'producto': producto,
         'categorias': categorias,
         'MEDIDA_CHOICES': MEDIDA_CHOICES,
-        'edit_mode': True, # Indicar que SÍ estamos editando
-        'productos': todos_los_productos # Pasar la lista para la tabla de abajo
+        'edit_mode': True,
+        'productos': todos_los_productos
     }
-    # Renderizar la MISMA plantilla
     return render(request, 'productos/modulo_productos.html', context)
 
 @login_required
 def exportar_excel_productos(request):
-    """
-    Genera un archivo Excel con la lista de productos, aplicando los filtros actuales.
-    """
-    # 1. Replicar la lógica de filtrado de la vista principal
     query = request.GET.get('q', '')
     productos = Producto.objects.all().select_related('categoria')
 
@@ -420,19 +402,16 @@ def exportar_excel_productos(request):
     
     productos = productos.order_by('nombre')
 
-    # 2. Crear el libro de Excel
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Productos"
 
-    # Escribir encabezados
     headers = [
         "SKU", "Nombre", "Descripción", "Categoría", "Marca", 
         "Precio Venta", "Costo Estándar", "Stock Mínimo", "Estado"
     ]
     ws.append(headers)
 
-    # Escribir datos de cada producto
     for producto in productos:
         ws.append([
             producto.sku,
@@ -446,7 +425,6 @@ def exportar_excel_productos(request):
             producto.get_estado_display()
         ])
 
-    # 3. Configurar la respuesta HTTP para descargar el archivo
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=lista_productos.xlsx'
     wb.save(response)
@@ -455,35 +433,29 @@ def exportar_excel_productos(request):
 
 # crud de categorias
 @login_required
-@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
+@user_passes_test(solo_admin, login_url='sin_permiso') # <--- PROTECCIÓN ADMIN
 def listar_categorias(request):
-    # === Guardar cantidad seleccionada en sesión ===
     if 'page_size' in request.GET:
         request.session['page_size'] = int(request.GET.get('page_size'))
     page_size = request.session.get('page_size', 5)
 
-    # === Ordenar (asc / desc) ===
     sort_by = request.GET.get('sort', 'id')
     order = request.GET.get('order', 'asc')
     sort_field = sort_by
     if order == 'desc':
         sort_by = f'-{sort_by}'
 
-    # === Filtro por búsqueda (si se usa el buscador) ===
     query = request.GET.get('q', '')
     categorias = Categoria.objects.all()
     if query:
         categorias = categorias.filter(nombre__icontains=query)
 
-    # === Ordenar queryset ===
     categorias = categorias.order_by(sort_by)
 
-    # === Paginación ===
     paginator = Paginator(categorias, page_size)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # === Contexto al template ===
     context = {
         'categorias': page_obj.object_list,
         'page_obj': page_obj,
@@ -496,16 +468,14 @@ def listar_categorias(request):
     return render(request, 'productos/categorias/listar.html', context)
 
 @login_required
-@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
+@user_passes_test(solo_admin, login_url='sin_permiso') # <--- PROTECCIÓN ADMIN
 def buscar_categorias(request):
-    """Filtra categorías por nombre en tiempo real"""
     query = request.GET.get('q', '').strip()
     categorias = Categoria.objects.all()
 
     if query:
         categorias = categorias.filter(nombre__icontains=query)
 
-    # Renderiza el HTML parcial actualizado
     html = render_to_string(
         'productos/categorias/_category_list_partial.html',
         {'categorias': categorias, 'page_obj': None},
@@ -514,7 +484,7 @@ def buscar_categorias(request):
     return JsonResponse({'html': html})
 
 @login_required
-@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
+@user_passes_test(solo_admin, login_url='sin_permiso') # <--- PROTECCIÓN ADMIN
 def crear_categoria(request):
     if request.method == 'POST':
         form = CategoriaForm(request.POST)
@@ -528,7 +498,7 @@ def crear_categoria(request):
 
 
 @login_required
-@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
+@user_passes_test(solo_admin, login_url='sin_permiso') # <--- PROTECCIÓN ADMIN
 def editar_categoria(request, id):
     categoria = get_object_or_404(Categoria, id=id)
     if request.method == 'POST':
@@ -542,7 +512,7 @@ def editar_categoria(request, id):
     return render(request, 'productos/categorias/form.html', {'form': form, 'accion': 'Editar'})
 
 @login_required
-@user_passes_test(solo_admin, login_url='/usuarios/sin_permiso/') # <--- PROTECCIÓN ADMIN
+@user_passes_test(solo_admin, login_url='sin_permiso') # <--- PROTECCIÓN ADMIN
 def eliminar_categoria(request, id):
     categoria = get_object_or_404(Categoria, id=id)
     categoria.delete()
@@ -568,19 +538,10 @@ def exportar_movimientos_excel(request):
     ws = wb.active
     ws.title = "Movimientos"
 
-    # Encabezados completos
     ws.append([
-        "Fecha Movimiento",
-        "Tipo",
-        "Producto",
-        "SKU",
-        "Cantidad",
-        "Usuario",
-        "Documento Ref.",
-        "Lote",
-        "Serie",
-        "Fecha Vencimiento",
-        "Observaciones"
+        "Fecha Movimiento", "Tipo", "Producto", "SKU", "Cantidad",
+        "Usuario", "Documento Ref.", "Lote", "Serie",
+        "Fecha Vencimiento", "Observaciones"
     ])
 
     movimientos = MovimientoInventario.objects.select_related("producto", "usuario").order_by("-fecha_movimiento")
@@ -600,10 +561,11 @@ def exportar_movimientos_excel(request):
             m.observaciones or "-"
         ])
 
-    response = HttpResponse(
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     response["Content-Disposition"] = 'attachment; filename=\"movimientos_completo.xlsx\"'
-
     wb.save(response)
     return response
+
+# --- VISTA PARA ACCESO DENEGADO (Por si no existe en Usuarios) ---
+def sin_permiso(request):
+    return render(request, 'usuarios/sin_permiso.html')

@@ -23,7 +23,7 @@ load_dotenv(BASE_DIR / ".env")  # ← carga el .env
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-unsafe")
 
-DEBUG = True
+DEBUG = False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist
